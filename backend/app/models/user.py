@@ -8,8 +8,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database.base import Base
-from backend.app.models.career_profile import CareerProfile
-from backend.app.models.financial_profile import FinancialProfile
+
 
 class User(Base):
     __tablename__ = "users"
@@ -20,7 +19,10 @@ class User(Base):
         default=uuid.uuid4
     )
 
-    full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    full_name: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
 
     email: Mapped[str] = mapped_column(
         String(120),
@@ -50,28 +52,30 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+
     updated_at: Mapped[DateTime] = mapped_column(
-    DateTime(timezone=True),
-    server_default=func.now(),
-    onupdate=func.now()
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
     )
+
     financial_profile: Mapped["FinancialProfile"] = relationship(
-    "FinancialProfile",
-    back_populates="user",
-    uselist=False,
-    cascade="all, delete-orphan"
+        "FinancialProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
     )
 
     career_profile: Mapped["CareerProfile"] = relationship(
-    "CareerProfile",
-    back_populates="user",
-    uselist=False,
-    cascade="all, delete-orphan"
+        "CareerProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
     )
 
     health_profile: Mapped["HealthProfile"] = relationship(
-    "HealthProfile",
-    back_populates="user",
-    uselist=False,
-    cascade="all, delete-orphan"
+        "HealthProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
     )

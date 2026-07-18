@@ -129,6 +129,16 @@ README.md
 
 ---
 
+# 📝 Documentation
+
+The project documentation currently includes:
+
+- [docs/database_models.md](docs/database_models.md) - database model design and schema explanation
+- [docs/alembic.md](docs/alembic.md) - Alembic migration workflow
+- [docs/implementation_progress.md](docs/implementation_progress.md) - summary of the work completed so far
+
+---
+
 # 🧩 Folder Responsibilities
 
 ## backend/app/api
