@@ -14,7 +14,10 @@ import app.models
 config = context.config
 
 # Use the DATABASE_URL from your .env file
-config.set_main_option("sqlalchemy.url", "postgresql://athuldev:zxcvbnm123@localhost:5432/personatwin")
+config.set_main_option(
+    "sqlalchemy.url",
+    DATABASE_URL
+)
 
 # Configure logging
 if config.config_file_name is not None:

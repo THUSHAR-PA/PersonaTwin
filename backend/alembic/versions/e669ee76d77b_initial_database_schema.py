@@ -75,7 +75,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id')
     )
-    op.drop_table('test_connection')
+   
     # ### end Alembic commands ###
 
 
