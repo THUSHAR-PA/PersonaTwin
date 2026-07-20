@@ -4,36 +4,36 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
-from app.schemas.career_profile import (
-    CareerProfileCreate,
-    CareerProfileUpdate,
-    CareerProfileResponse,
+from app.schemas.health_profile import (
+    HealthProfileCreate,
+    HealthProfileUpdate,
+    HealthProfileResponse,
 )
-from app.services.career_service import (
-    create_career_profile,
-    get_career_profile,
-    update_career_profile,
-    delete_career_profile,
+from app.services.health_service import (
+    create_health_profile,
+    get_health_profile,
+    update_health_profile,
+    delete_health_profile,
 )
 
 router = APIRouter(
-    prefix="/users/{user_id}/career",
-    tags=["Career Profile"],
+    prefix="/users/{user_id}/health",
+    tags=["Health Profile"],
 )
 
 
 @router.post(
     "/",
-    response_model=CareerProfileResponse,
+    response_model=HealthProfileResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_profile(
     user_id: UUID,
-    profile: CareerProfileCreate,
+    profile: HealthProfileCreate,
     db: Session = Depends(get_db),
 ):
     try:
-        return create_career_profile(
+        return create_health_profile(
             db,
             user_id,
             profile,
@@ -48,18 +48,18 @@ def create_profile(
 
 @router.get(
     "/",
-    response_model=CareerProfileResponse,
+    response_model=HealthProfileResponse,
 )
 def get_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
 ):
-    profile = get_career_profile(db, user_id)
+    profile = get_health_profile(db, user_id)
 
     if profile is None:
         raise HTTPException(
             status_code=404,
-            detail="Career profile not found.",
+            detail="Health profile not found.",
         )
 
     return profile
@@ -67,14 +67,14 @@ def get_profile(
 
 @router.put(
     "/",
-    response_model=CareerProfileResponse,
+    response_model=HealthProfileResponse,
 )
 def update_profile(
     user_id: UUID,
-    profile: CareerProfileUpdate,
+    profile: HealthProfileUpdate,
     db: Session = Depends(get_db),
 ):
-    updated = update_career_profile(
+    updated = update_health_profile(
         db,
         user_id,
         profile,
@@ -83,7 +83,7 @@ def update_profile(
     if updated is None:
         raise HTTPException(
             status_code=404,
-            detail="Career profile not found.",
+            detail="Health profile not found.",
         )
 
     return updated
@@ -97,7 +97,7 @@ def delete_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
 ):
-    deleted = delete_career_profile(
+    deleted = delete_health_profile(
         db,
         user_id,
     )
@@ -105,5 +105,5 @@ def delete_profile(
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail="Career profile not found.",
+            detail="Health profile not found.",
         )

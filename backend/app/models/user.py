@@ -30,23 +30,23 @@ class User(Base):
         nullable=False
     )
 
-    age: Mapped[int] = mapped_column(Integer)
+    age: Mapped[int] = mapped_column(Integer, nullable=True)
 
-    gender: Mapped[str] = mapped_column(String(20))
+    gender: Mapped[str] = mapped_column(String(20), nullable=True)
 
-    country: Mapped[str] = mapped_column(String(50))
+    country: Mapped[str] = mapped_column(String(50), nullable=True)
 
-    education: Mapped[str] = mapped_column(String(100))
+    education: Mapped[str] = mapped_column(String(100), nullable=True)
 
-    university: Mapped[str] = mapped_column(String(150))
+    university: Mapped[str] = mapped_column(String(150), nullable=True)
 
-    cgpa: Mapped[float] = mapped_column(Float)
+    cgpa: Mapped[float] = mapped_column(Float, nullable=True)
 
-    career_goal: Mapped[str] = mapped_column(String(150))
+    career_goal: Mapped[str] = mapped_column(String(150), nullable=True)
 
-    dream_country: Mapped[str] = mapped_column(String(100))
+    dream_country: Mapped[str] = mapped_column(String(100), nullable=True)
 
-    risk_tolerance: Mapped[str] = mapped_column(String(20))
+    risk_tolerance: Mapped[str] = mapped_column(String(20), nullable=True)
 
     created_at: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
