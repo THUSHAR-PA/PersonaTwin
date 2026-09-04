@@ -3,20 +3,20 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-# -------------------------
-# User Registration Schema
-# -------------------------
 class UserCreate(BaseModel):
     full_name: str
     email: EmailStr
+    password: str = Field(..., min_length=8)
 
 
-# -------------------------
-# User Profile Update Schema
-# -------------------------
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class UserUpdate(BaseModel):
     age: int | None = None
     gender: str | None = None
@@ -27,11 +27,9 @@ class UserUpdate(BaseModel):
     career_goal: str | None = None
     dream_country: str | None = None
     risk_tolerance: str | None = None
+    password: str | None = Field(default=None, min_length=8)
 
 
-# -------------------------
-# User Response Schema
-# -------------------------
 class UserResponse(BaseModel):
     id: UUID
     full_name: str
@@ -51,3 +49,13 @@ class UserResponse(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenPayload(BaseModel):
+    sub: UUID | None = None
+    exp: int | None = None

@@ -30,6 +30,12 @@ class User(Base):
         nullable=False
     )
 
+    hashed_password: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+    )
+
     age: Mapped[int] = mapped_column(Integer, nullable=True)
 
     gender: Mapped[str] = mapped_column(String(20), nullable=True)

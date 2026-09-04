@@ -2,53 +2,30 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.auth.security import hash_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 
 
 def create_user(db: Session, user_data: UserCreate) -> User:
-    """
-    Create a new user.
-
-    This function checks whether the email already exists.
-    If the email is unique, a new user record is created
-    and stored in the database.
-
-    Args:
-        db (Session):
-            SQLAlchemy database session.
-
-        user_data (UserCreate):
-            Validated user registration data.
-
-    Returns:
-        User:
-            Newly created User object.
-
-    Raises:
-        ValueError:
-            If a user with the given email already exists.
-    """
-
-    existing_user = (
-        db.query(User)
-        .filter(User.email == user_data.email)
-        .first()
-    )
-
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise ValueError("Email already exists.")
 
     new_user = User(
         full_name=user_data.full_name,
         email=user_data.email,
+        hashed_password=hash_password(user_data.password),
     )
 
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
     return new_user
+
+
+def get_user_by_email(db: Session, email: str) -> User | None:
+    return db.query(User).filter(User.email == email).first()
 
 
 def get_user_by_id(db: Session, user_id: UUID) -> User | None:
