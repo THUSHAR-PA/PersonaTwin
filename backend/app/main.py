@@ -6,6 +6,7 @@ from app.api.career import router as career_router
 from app.api.finance import router as finance_router
 from app.api.health import router as health_router
 from app.api.simulation import router as simulation_router
+from app.api.twin import router as twin_router
 from app.api.users import router as user_router
 
 app = FastAPI(
@@ -29,4 +30,5 @@ app.include_router(finance_router)
 app.include_router(career_router)
 app.include_router(health_router)
 app.include_router(simulation_router)
+app.include_router(twin_router)
 app.include_router(auth_router)

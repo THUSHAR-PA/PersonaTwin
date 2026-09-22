@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.dependencies.auth import ensure_user_owns_resource, get_current_user
+from app.models.user import User
 from app.schemas.career_profile import (
     CareerProfileCreate,
     CareerProfileUpdate,
@@ -14,6 +16,7 @@ from app.services.career_service import (
     get_career_profile,
     update_career_profile,
     delete_career_profile,
+    sync_github_profile,
 )
 
 router = APIRouter(
@@ -107,3 +110,24 @@ def delete_profile(
             status_code=404,
             detail="Career profile not found.",
         )
+
+
+@router.post(
+    "/sync-github",
+    response_model=CareerProfileResponse,
+)
+def sync_github(
+    user_id: UUID,
+    github_username: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    ensure_user_owns_resource(user_id, current_user)
+
+    try:
+        return sync_github_profile(db, user_id, github_username)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+
