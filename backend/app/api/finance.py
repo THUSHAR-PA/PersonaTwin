@@ -10,12 +10,18 @@ from app.schemas.financial_profile import (
     FinancialProfileCreate,
     FinancialProfileUpdate,
     FinancialProfileResponse,
+    WalletAccountRequest,
+    WalletLoginRequest,
+    WalletSignupRequest,
+    WalletTokenRequest,
 )
 from app.services.finance_service import (
     create_financial_profile,
     get_financial_profile,
     update_financial_profile,
     delete_financial_profile,
+    wallet_authenticate,
+    wallet_create_account,
     sync_financial_summary,
 )
 
@@ -116,19 +122,70 @@ def delete_profile(
 
 
 @router.post(
+    "/wallet/accounts",
+)
+def wallet_create_account_route(
+    payload: WalletAccountRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return wallet_create_account(
+            payload.wallet_token,
+            payload.model_dump(exclude={"wallet_token"}),
+        )
+    except PermissionError as error:
+        raise HTTPException(status_code=401, detail=str(error))
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+
+
+@router.post(
+    "/wallet/signup",
+)
+def wallet_signup(
+    payload: WalletSignupRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return wallet_authenticate("signup", payload.model_dump())
+    except PermissionError as error:
+        detail = str(error)
+        status_code = 409 if "already registered" in detail.lower() else 401
+        raise HTTPException(status_code=status_code, detail=detail)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+
+
+@router.post(
+    "/wallet/login",
+)
+def wallet_login(
+    payload: WalletLoginRequest,
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return wallet_authenticate("login", payload.model_dump())
+    except PermissionError as error:
+        raise HTTPException(status_code=401, detail=str(error))
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+
+
+@router.post(
     "/sync",
     response_model=FinancialProfileResponse,
 )
 def sync_profile(
     user_id: UUID,
+    payload: WalletTokenRequest | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     ensure_user_owns_resource(user_id, current_user)
 
     try:
-        return sync_financial_summary(db, user_id)
+        return sync_financial_summary(db, user_id, payload.wallet_token if payload else None)
     except PermissionError as error:
-        raise HTTPException(status_code=502, detail=str(error))
+        raise HTTPException(status_code=401, detail=str(error))
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error))

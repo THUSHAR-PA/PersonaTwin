@@ -2,7 +2,30 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class WalletSignupRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+
+class WalletLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class WalletTokenRequest(BaseModel):
+    wallet_token: str
+
+
+class WalletAccountRequest(BaseModel):
+    wallet_token: str
+    name: str
+    account_type: str = "PERSONAL"
+    balance: float = 0
+    currency: str = "INR"
 
 
 # -------------------------

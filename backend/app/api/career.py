@@ -10,6 +10,7 @@ from app.schemas.career_profile import (
     CareerProfileCreate,
     CareerProfileUpdate,
     CareerProfileResponse,
+    GitHubSyncRequest,
 )
 from app.services.career_service import (
     create_career_profile,
@@ -118,16 +119,15 @@ def delete_profile(
 )
 def sync_github(
     user_id: UUID,
-    github_username: str,
+    payload: GitHubSyncRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     ensure_user_owns_resource(user_id, current_user)
 
     try:
-        return sync_github_profile(db, user_id, github_username)
+        return sync_github_profile(db, user_id, payload.github_username, payload.github_token)
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error))
-

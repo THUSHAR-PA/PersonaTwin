@@ -179,6 +179,55 @@ select:focus-visible {
   gap: 18px;
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(22, 33, 29, 0.28);
+  backdrop-filter: blur(5px);
+}
+
+.modal-panel {
+  width: min(100%, 440px);
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel-solid);
+  box-shadow: 0 24px 70px -32px rgba(17, 22, 20, 0.45);
+  animation: rise 0.22s ease-out;
+}
+
+.modal-panel .panel-title {
+  margin-bottom: 10px;
+}
+
+.modal-copy {
+  margin: 0 0 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.icon-action {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.icon-action:hover:not(:disabled) {
+  color: var(--text-main);
+  background: var(--primary-tint);
+}
+
 /* =========================================
    FORMS & INPUTS
    ========================================= */

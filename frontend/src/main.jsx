@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity, Banknote, BriefcaseBusiness, Check, CircleAlert,
-  HeartPulse, LogOut, Play, RefreshCw, Save, Sparkles, UserRound, ArrowRight,
+  Github, HeartPulse, LogOut, Play, RefreshCw, Save, Sparkles, UserRound, ArrowRight,
   Minus, Pencil, Plus, Upload, X
 } from "lucide-react";
 import { TwinMark, IconOverview, IconProfiles, IconSimulations } from "./icons";
@@ -183,6 +183,14 @@ function App() {
   const [simulationResult, setSimulationResult] = useState(null);
   const [status, setStatus] = useState({ type: "idle", message: "" });
   const [loading, setLoading] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [walletAuthMode, setWalletAuthMode] = useState("login");
+  const [walletAuthForm, setWalletAuthForm] = useState({ username: "", email: "", password: "" });
+  const [walletToken, setWalletToken] = useState(() => sessionStorage.getItem("pt_wallet_token") || "");
+  const [walletAccountModalOpen, setWalletAccountModalOpen] = useState(false);
+  const [walletAccountForm, setWalletAccountForm] = useState({ name: "", balance: "", currency: "INR" });
+  const [githubModalOpen, setGithubModalOpen] = useState(false);
+  const [githubForm, setGithubForm] = useState({ username: sessionStorage.getItem("pt_github_username") || "", token: sessionStorage.getItem("pt_github_token") || "" });
 
   const authHeaders = useMemo(() => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }), [token]);
 
@@ -267,6 +275,20 @@ function App() {
       }
       const data = await request("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: authForm.email, password: authForm.password }) });
       localStorage.setItem("pt_token", data.access_token);
+      setUser(null);
+      setUserForm(emptyUser);
+      setProfiles(emptyProfiles);
+      setProfileExists({ financial: false, career: false, health: false });
+      setTwinData(null);
+      setSimulationResult(null);
+      setWalletToken("");
+      sessionStorage.removeItem("pt_wallet_token");
+      setGithubForm({ username: "", token: "" });
+      sessionStorage.removeItem("pt_github_username");
+      sessionStorage.removeItem("pt_github_token");
+      setCurrentView("overview");
+      setActiveProfileTab("identity");
+      setEditingProfile(false);
       setToken(data.access_token);
     } catch (error) {
       setStatus({ type: "error", message: error.message });
@@ -321,35 +343,162 @@ function App() {
     } finally { setLoading(false); }
   }
 
+  async function syncWalletData(walletAccessToken = walletToken) {
+    if (!user || !walletAccessToken) return false;
+    const synced = await request(`/users/${user.id}/financial/sync`, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ wallet_token: walletAccessToken }),
+    });
+    setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
+    setProfileExists((current) => ({ ...current, financial: true }));
+    return true;
+  }
+
+  async function refreshDashboard() {
+    setLoading(true);
+    try {
+      const activeWalletToken = sessionStorage.getItem("pt_wallet_token") || walletToken;
+      if (activeWalletToken) {
+        await syncWalletData(activeWalletToken);
+      } else if (profileExists.financial) {
+        setWalletAuthMode("login");
+        setWalletModalOpen(true);
+      }
+      await loadTwinData();
+      setStatus(activeWalletToken
+        ? { type: "success", message: "Dashboard and wallet data refreshed." }
+        : profileExists.financial
+          ? { type: "error", message: "Reconnect Persona Wallet to refresh savings." }
+          : { type: "success", message: "Dashboard data refreshed." });
+    } catch (error) {
+      if (String(error.message).toLowerCase().includes("token is invalid or expired")) {
+        sessionStorage.removeItem("pt_wallet_token");
+        setWalletToken("");
+        setWalletAuthMode("login");
+        setWalletModalOpen(true);
+        setStatus({ type: "error", message: "Persona Wallet session expired. Log in to refresh savings." });
+        return;
+      }
+      setStatus({ type: "error", message: error.message });
+    } finally { setLoading(false); }
+  }
+
   async function handleImport(domain) {
     if (!user || !["financial", "career"].includes(domain)) return;
 
-    if (domain === "career") {
-      let githubUsername = localStorage.getItem("pt_github_username") || "";
-      if (!githubUsername) {
-        githubUsername = window.prompt("Enter your GitHub username");
-        if (!githubUsername?.trim()) return;
-        localStorage.setItem("pt_github_username", githubUsername.trim());
-      }
-
-      setLoading(true);
-      try {
-        const synced = await request(`/users/${user.id}/career/sync-github?github_username=${encodeURIComponent(githubUsername.trim())}`, { method: "POST", headers: authHeaders });
-        setProfiles((current) => ({ ...current, career: profileToForm("career", synced) }));
-        setProfileExists((current) => ({ ...current, career: true }));
-        setStatus({ type: "success", message: "Career details synced from GitHub." });
-      } catch (error) {
-        setStatus({ type: "error", message: error.message });
-      } finally { setLoading(false); }
+    if (domain === "financial") {
+      setWalletModalOpen(true);
       return;
     }
 
+    if (domain === "career") {
+      setGithubModalOpen(true);
+      return;
+    }
+  }
+
+  async function syncGithubProfile(event) {
+    event.preventDefault();
+    if (!user) return;
     setLoading(true);
     try {
-      const synced = await request(`/users/${user.id}/financial/sync`, { method: "POST", headers: authHeaders });
+      const synced = await request(`/users/${user.id}/career/sync-github`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ github_username: githubForm.username, github_token: githubForm.token || null }),
+      });
+      sessionStorage.setItem("pt_github_username", githubForm.username.trim());
+      if (githubForm.token) sessionStorage.setItem("pt_github_token", githubForm.token);
+      setProfiles((current) => ({ ...current, career: profileToForm("career", synced) }));
+      setProfileExists((current) => ({ ...current, career: true }));
+      setGithubModalOpen(false);
+      setStatus({ type: "success", message: "Career details synced from GitHub." });
+    } catch (error) {
+      setStatus({ type: "error", message: error.message });
+    } finally { setLoading(false); }
+  }
+
+  async function authenticateWallet(event) {
+    event.preventDefault();
+    if (!user) return;
+    setLoading(true);
+    setStatus({ type: "idle", message: "" });
+    try {
+      const path = walletAuthMode === "signup" ? "signup" : "login";
+      let auth = await request(`/users/${user.id}/financial/wallet/${path}`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify(walletAuthMode === "signup" ? walletAuthForm : {
+          email: walletAuthForm.email,
+          password: walletAuthForm.password,
+        }),
+      });
+      let nextToken = auth?.access_token;
+      if (!nextToken && walletAuthMode === "signup") {
+        auth = await request(`/users/${user.id}/financial/wallet/login`, {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ email: walletAuthForm.email, password: walletAuthForm.password }),
+        });
+        nextToken = auth?.access_token;
+      }
+      if (!nextToken) throw new Error("Persona Wallet did not return a login token.");
+      setWalletToken(nextToken);
+      sessionStorage.setItem("pt_wallet_token", nextToken);
+
+      if (walletAuthMode === "signup") {
+        setWalletModalOpen(false);
+        setWalletAccountModalOpen(true);
+        setStatus({ type: "success", message: "Wallet account created. Add your first bank account to continue." });
+        return;
+      }
+
+      const synced = await request(`/users/${user.id}/financial/sync`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ wallet_token: nextToken }),
+      });
       setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
       setProfileExists((current) => ({ ...current, financial: true }));
+      setWalletModalOpen(false);
       setStatus({ type: "success", message: "Financial information synced from Persona Wallet." });
+    } catch (error) {
+      if (walletAuthMode === "signup" && String(error.message).toLowerCase().includes("already registered")) {
+        setWalletAuthMode("login");
+        setStatus({ type: "error", message: "This wallet email already exists. Use Login for this account." });
+        return;
+      }
+      setStatus({ type: "error", message: error.message });
+    } finally { setLoading(false); }
+  }
+
+  async function createWalletAccount(event) {
+    event.preventDefault();
+    if (!user || !walletToken) return;
+    setLoading(true);
+    try {
+      await request(`/users/${user.id}/financial/wallet/accounts`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          wallet_token: walletToken,
+          name: walletAccountForm.name,
+          account_type: "PERSONAL",
+          balance: Number(walletAccountForm.balance || 0),
+          currency: walletAccountForm.currency,
+        }),
+      });
+      const synced = await request(`/users/${user.id}/financial/sync`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ wallet_token: walletToken }),
+      });
+      setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
+      setProfileExists((current) => ({ ...current, financial: true }));
+      setWalletAccountModalOpen(false);
+      setWalletAccountForm({ name: "", balance: "", currency: "INR" });
+      setStatus({ type: "success", message: "Bank account added and wallet synced." });
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     } finally { setLoading(false); }
@@ -359,8 +508,22 @@ function App() {
     localStorage.removeItem("pt_token");
     setToken(null);
     setUser(null);
+    setUserForm(emptyUser);
+    setProfiles(emptyProfiles);
+    setProfileExists({ financial: false, career: false, health: false });
     setTwinData(null);
     setSimulationResult(null);
+    setWalletToken("");
+    sessionStorage.removeItem("pt_wallet_token");
+    setWalletModalOpen(false);
+    setWalletAccountModalOpen(false);
+    setGithubModalOpen(false);
+    sessionStorage.removeItem("pt_github_username");
+    sessionStorage.removeItem("pt_github_token");
+    setCurrentView("overview");
+    setActiveProfileTab("identity");
+    setEditingProfile(false);
+    setStatus({ type: "idle", message: "" });
   }
 
   const analytics = useMemo(() => calculateAnalytics(userForm, profiles, profileExists), [userForm, profiles, profileExists]);
@@ -435,13 +598,42 @@ function App() {
             <span className="eyebrow">Digital Twin Dashboard</span>
             <h1>{user.full_name}</h1>
           </div>
-          <button className="secondary-action" type="button" onClick={() => loadTwinData()} disabled={loading} >
+          <button className="secondary-action" type="button" onClick={refreshDashboard} disabled={loading} >
             <RefreshCw size={14} strokeWidth={2} />
             Refresh Data
           </button>
         </header>
 
         <StatusMessage status={status} />
+        {walletModalOpen && (
+          <WalletAuthModal
+            mode={walletAuthMode}
+            form={walletAuthForm}
+            loading={loading}
+            onModeChange={setWalletAuthMode}
+            onChange={(key, value) => setWalletAuthForm((current) => ({ ...current, [key]: value }))}
+            onSubmit={authenticateWallet}
+            onClose={() => setWalletModalOpen(false)}
+          />
+        )}
+        {walletAccountModalOpen && (
+          <WalletAccountModal
+            form={walletAccountForm}
+            loading={loading}
+            onChange={(key, value) => setWalletAccountForm((current) => ({ ...current, [key]: value }))}
+            onSubmit={createWalletAccount}
+            onClose={() => setWalletAccountModalOpen(false)}
+          />
+        )}
+        {githubModalOpen && (
+          <GitHubModal
+            form={githubForm}
+            loading={loading}
+            onChange={(key, value) => setGithubForm((current) => ({ ...current, [key]: value }))}
+            onSubmit={syncGithubProfile}
+            onClose={() => setGithubModalOpen(false)}
+          />
+        )}
 
         {currentView === 'overview' && (
           <div className="view-fade-in">
@@ -628,6 +820,66 @@ function DomainPanel({ domain, icon, profile, exists, editing, loading, onChange
         </button>
         <button className="secondary-action compact" type="button" onClick={onCancel}>Cancel</button>
       </div>
+    </div>
+  );
+}
+function WalletAuthModal({ mode, form, loading, onModeChange, onChange, onSubmit, onClose }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-auth-title">
+        <div className="panel-title">
+          <div><Banknote size={18} strokeWidth={2} /><h2 id="wallet-auth-title">Persona Wallet</h2></div>
+          <button type="button" className="icon-action" onClick={onClose} aria-label="Close wallet login"><X size={16} /></button>
+        </div>
+        <p className="modal-copy">Sign in to connect the wallet account used for your financial summary.</p>
+        <div className="segmented">
+          <button type="button" className={mode === "login" ? "active" : ""} onClick={() => onModeChange("login")}>Login</button>
+          <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => onModeChange("signup")}>Sign up</button>
+        </div>
+        <form className="auth-form" onSubmit={onSubmit}>
+          {mode === "signup" && <label>Username <input required value={form.username} onChange={(event) => onChange("username", event.target.value)} /></label>}
+          <label>Email <input required type="email" value={form.email} onChange={(event) => onChange("email", event.target.value)} /></label>
+          <label>Password <input required type="password" minLength={mode === "signup" ? 8 : undefined} value={form.password} onChange={(event) => onChange("password", event.target.value)} /></label>
+          <button className="primary-action" type="submit" disabled={loading}>{mode === "signup" ? "Create wallet account" : "Sign in to wallet"}<ArrowRight size={16} /></button>
+        </form>
+      </section>
+    </div>
+  );
+}
+function WalletAccountModal({ form, loading, onChange, onSubmit, onClose }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="wallet-account-title">
+        <div className="panel-title">
+          <div><Banknote size={18} strokeWidth={2} /><h2 id="wallet-account-title">Add bank account</h2></div>
+          <button type="button" className="icon-action" onClick={onClose} aria-label="Close bank account form"><X size={16} /></button>
+        </div>
+        <p className="modal-copy">Add your first personal account so PersonaTwin can calculate your wallet summary.</p>
+        <form className="auth-form" onSubmit={onSubmit}>
+          <label>Account name <input required placeholder="Main bank account" value={form.name} onChange={(event) => onChange("name", event.target.value)} /></label>
+          <label>Current balance <input type="number" min="0" step="0.01" required value={form.balance} onChange={(event) => onChange("balance", event.target.value)} /></label>
+          <label>Currency <input required maxLength={3} value={form.currency} onChange={(event) => onChange("currency", event.target.value.toUpperCase())} /></label>
+          <button className="primary-action" type="submit" disabled={loading}>Add account and sync<ArrowRight size={16} /></button>
+        </form>
+      </section>
+    </div>
+  );
+}
+function GitHubModal({ form, loading, onChange, onSubmit, onClose }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="modal-panel" role="dialog" aria-modal="true" aria-labelledby="github-title">
+        <div className="panel-title">
+          <div><Github size={18} strokeWidth={2} /><h2 id="github-title">Connect GitHub</h2></div>
+          <button type="button" className="icon-action" onClick={onClose} aria-label="Close GitHub connection"><X size={16} /></button>
+        </div>
+        <p className="modal-copy">Authorize GitHub repository access to infer your skills and career profile.</p>
+        <form className="auth-form" onSubmit={onSubmit}>
+          <label>GitHub username <input required value={form.username} onChange={(event) => onChange("username", event.target.value)} /></label>
+          <label>Personal access token <input type="password" placeholder="Optional for public repositories" value={form.token} onChange={(event) => onChange("token", event.target.value)} /></label>
+          <button className="primary-action" type="submit" disabled={loading}>Connect and sync<ArrowRight size={16} /></button>
+        </form>
+      </section>
     </div>
   );
 }

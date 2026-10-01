@@ -127,14 +127,14 @@ def sync_github_profile(
     db: Session,
     user_id: UUID,
     github_username: str,
+    github_token: str | None = None,
 ) -> CareerProfile:
     """Import public GitHub profile and repository signals into career data."""
     username = github_username.strip().lstrip("@").strip()
     if not username:
         raise ValueError("GitHub username is required.")
 
-    github_token = os.getenv("GITHUB_TOKEN")
-    return sync_github_data(db, user_id, username, github_token)
+    return sync_github_data(db, user_id, username, github_token or os.getenv("GITHUB_TOKEN"))
 
 
 def sync_github_data(
@@ -189,12 +189,61 @@ def sync_github_data(
         for topic in repository.get("topics", [])
     })
 
+    repository_text = " ".join(
+        " ".join(
+            str(repository.get(field) or "")
+            for field in ("name", "description", "language")
+        )
+        + " "
+        + " ".join(repository.get("topics", []))
+        for repository in repositories
+    ).lower()
+    language_names = {language.lower() for language in languages}
+    inferred_skills = set(languages)
+
+    skill_keywords = {
+        "React": ("react", "next.js", "nextjs"),
+        "TypeScript": ("typescript",),
+        "JavaScript": ("javascript", "node", "express"),
+        "Python": ("python", "django", "flask", "fastapi"),
+        "Java": ("java", "spring", "android"),
+        "C#": ("c#", ".net", "asp.net"),
+        "Go": ("golang", " go "),
+        "Rust": ("rust",),
+        "SQL": ("sql", "postgres", "mysql", "database"),
+        "Machine Learning": ("machine-learning", "machine learning", "tensorflow", "pytorch", "scikit"),
+        "Data Analysis": ("data-analysis", "data analysis", "pandas", "numpy", "jupyter"),
+        "Cloud": ("aws", "azure", "gcp", "cloud"),
+        "Docker": ("docker", "container"),
+        "Kubernetes": ("kubernetes", "k8s"),
+        "Terraform": ("terraform",),
+    }
+    for skill, keywords in skill_keywords.items():
+        if any(keyword in repository_text for keyword in keywords):
+            inferred_skills.add(skill)
+
+    role_signals = [
+        ("Machine Learning Engineer", ("machine learning", "tensorflow", "pytorch", "scikit", "ml")),
+        ("Data Analyst", ("data analysis", "pandas", "numpy", "jupyter", "analytics")),
+        ("DevOps Engineer", ("docker", "kubernetes", "terraform", "aws", "azure", "gcp", "devops")),
+        ("Frontend Developer", ("react", "next.js", "nextjs", "frontend", "vue", "angular")),
+        ("Backend Developer", ("django", "flask", "fastapi", "spring", "express", "backend", "api")),
+        ("Mobile Developer", ("android", "ios", "swift", "kotlin", "react native", "flutter")),
+    ]
+    inferred_role = "Software Developer"
+    for role, keywords in role_signals:
+        if sum(keyword in repository_text for keyword in keywords) >= 1:
+            inferred_role = role
+            break
+    if not language_names and not topics:
+        inferred_role = "Developer"
+
     values = {
-        "current_role": (github_profile.get("company") or "").strip(),
+        "current_role": inferred_role,
         "years_of_experience": profile.years_of_experience if profile else 0,
         "expected_salary": profile.expected_salary if profile else 0,
         "dream_role": profile.dream_role if profile else "",
-        "skills": sorted(set(existing_skills + languages)),
+        "skills": sorted(set(existing_skills) | inferred_skills),
         "certifications": sorted(set(existing_certifications + topics)),
     }
     if not values["current_role"]:

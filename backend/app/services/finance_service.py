@@ -12,6 +12,72 @@ from app.schemas.financial_profile import (
 )
 
 
+def wallet_authenticate(
+    action: str,
+    payload: dict,
+) -> dict:
+    """Proxy wallet signup/login without storing wallet credentials or tokens."""
+    wallet_url = os.getenv(
+        "PERSONA_WALLET_API_URL",
+        "https://persona-wallet.onrender.com",
+    ).rstrip("/")
+
+    try:
+        response = httpx.post(
+            f"{wallet_url}/auth/{action}",
+            json=payload,
+            timeout=15,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except httpx.HTTPStatusError as error:
+        try:
+            response_data = error.response.json()
+            detail = response_data.get("detail") if isinstance(response_data, dict) else None
+        except ValueError:
+            detail = error.response.text.strip() or None
+        raise PermissionError(detail or "Persona Wallet authentication failed.") from error
+    except (httpx.HTTPError, ValueError) as error:
+        raise RuntimeError("Persona Wallet could not be reached.") from error
+
+    if not isinstance(result, dict):
+        raise RuntimeError("Persona Wallet returned an invalid authentication response.")
+    return result
+
+
+def wallet_create_account(wallet_token: str, payload: dict) -> dict:
+    """Create a wallet account using the currently authenticated wallet token."""
+    wallet_url = os.getenv(
+        "PERSONA_WALLET_API_URL",
+        "https://persona-wallet.onrender.com",
+    ).rstrip("/")
+
+    try:
+        response = httpx.post(
+            f"{wallet_url}/accounts/",
+            json=payload,
+            headers={"Authorization": f"Bearer {wallet_token}"},
+            timeout=15,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except httpx.HTTPStatusError as error:
+        try:
+            response_data = error.response.json()
+            detail = response_data.get("detail") if isinstance(response_data, dict) else None
+        except ValueError:
+            detail = error.response.text.strip() or None
+        if error.response.status_code in (401, 403):
+            raise PermissionError(detail or "Persona Wallet authentication expired.") from error
+        raise RuntimeError(detail or "Persona Wallet account could not be created.") from error
+    except (httpx.HTTPError, ValueError) as error:
+        raise RuntimeError("Persona Wallet could not be reached.") from error
+
+    if not isinstance(result, dict):
+        raise RuntimeError("Persona Wallet returned an invalid account response.")
+    return result
+
+
 def create_financial_profile(
     db: Session,
     user_id: UUID,
@@ -145,11 +211,11 @@ def delete_financial_profile(
 def sync_financial_summary(
     db: Session,
     user_id: UUID,
+    wallet_token: str | None = None,
 ) -> FinancialProfile:
     """Fetch the user's summary from Persona Wallet and persist it locally."""
-    wallet_token = os.getenv("PERSONA_WALLET_TOKEN")
     if not wallet_token:
-        raise RuntimeError("PERSONA_WALLET_TOKEN is not configured.")
+        raise PermissionError("Connect a Persona Wallet account before syncing.")
 
     wallet_url = os.getenv(
         "PERSONA_WALLET_API_URL",

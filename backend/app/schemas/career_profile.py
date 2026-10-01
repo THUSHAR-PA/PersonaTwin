@@ -5,6 +5,11 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
+class GitHubSyncRequest(BaseModel):
+    github_username: str
+    github_token: str | None = None
+
+
 # -------------------------
 # Career Profile Creation
 # -------------------------
