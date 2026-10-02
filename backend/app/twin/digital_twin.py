@@ -34,6 +34,7 @@ class DigitalTwin:
             "monthly_income": financial_profile.get("monthly_income", 0),
             "monthly_expense": financial_profile.get("monthly_expense", 0),
             "current_savings": financial_profile.get("current_savings", 0),
+            "financial_twin": (financial_profile.get("wallet_snapshot") or {}).get("financial_twin"),
             "years_of_experience": career_profile.get("years_of_experience", 0),
             "expected_salary": career_profile.get("expected_salary", 0),
             "dream_role": career_profile.get("dream_role") or "Not specified",

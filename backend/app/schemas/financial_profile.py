@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from uuid import UUID
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -62,5 +63,7 @@ class FinancialProfileResponse(BaseModel):
     current_savings: float
     investments: float
     debts: float
+    wallet_snapshot: dict | None = None
+    wallet_synced_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
