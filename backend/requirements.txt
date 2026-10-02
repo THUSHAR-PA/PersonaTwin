@@ -12,5 +12,7 @@ python-multipart==0.0.20
 email-validator==2.2.0
 httpx==0.28.1
 
+
 python-jose[cryptography]
-passlib[bcrypt]
+passlib==1.7.4
+bcrypt==4.0.1
