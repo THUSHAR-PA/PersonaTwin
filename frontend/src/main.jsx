@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity, Banknote, BriefcaseBusiness, Check, CircleAlert,
@@ -16,7 +16,7 @@ const scenarioGroups = { financial: [ { label: "Vehicle Purchase", value: "vehic
 
 const COUNTRIES = [ "United States", "United Kingdom", "India", "Canada", "Australia", "Germany", "France", "Singapore", "United Arab Emirates", "Ireland", "Netherlands", "New Zealand", "Japan", "South Africa", "Brazil" ];
 
-const IMPORT_LABELS = { financial: "Import bank statement", career: "Sync GitHub", health: "Sync health app" };
+const IMPORT_LABELS = { financial: "Connect Persona Wallet", career: "Sync GitHub", health: "Sync health app" };
 
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 function formatNumber(value) { const n = Number(value); return Number.isFinite(n) ? n.toLocaleString() : value; }
@@ -187,6 +187,9 @@ function App() {
   const [walletAuthMode, setWalletAuthMode] = useState("login");
   const [walletAuthForm, setWalletAuthForm] = useState({ username: "", email: "", password: "" });
   const [walletToken, setWalletToken] = useState(() => sessionStorage.getItem("pt_wallet_token") || "");
+  const [walletSnapshot, setWalletSnapshot] = useState(null);
+  const [walletSyncedAt, setWalletSyncedAt] = useState(null);
+  const walletSyncBusy = useRef(false);
   const [walletAccountModalOpen, setWalletAccountModalOpen] = useState(false);
   const [walletAccountForm, setWalletAccountForm] = useState({ name: "", balance: "", currency: "INR" });
   const [githubModalOpen, setGithubModalOpen] = useState(false);
@@ -209,7 +212,7 @@ function App() {
   }, [scenario, activeDomain]);
 
   async function request(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, options);
+    const response = await fetch(`${API_BASE_URL}${path}`, { signal: AbortSignal.timeout(90000), ...options });
     if (response.status === 204) return null;
     const text = await response.text();
     let data = null;
@@ -221,7 +224,9 @@ function App() {
     }
     if (!response.ok) {
       const detail = typeof data === "object" && data !== null ? data.detail || data.message || response.statusText : data || response.statusText;
-      throw new Error(Array.isArray(detail) ? detail[0]?.msg : detail);
+      const error = new Error(Array.isArray(detail) ? detail[0]?.msg : detail);
+      error.status = response.status;
+      throw error;
     }
     return data;
   }
@@ -240,6 +245,10 @@ function App() {
         try {
           const profile = await request(`/users/${currentUser.id}/${domain}/`, { headers });
           nextProfiles[domain] = profileToForm(domain, profile);
+          if (domain === "financial") {
+            setWalletSnapshot(profile.wallet_snapshot);
+            setWalletSyncedAt(profile.wallet_synced_at);
+          }
           exists[domain] = true;
         } catch (error) {
           nextProfiles[domain] = emptyProfiles[domain];
@@ -333,6 +342,7 @@ function App() {
     setLoading(true);
     setSimulationResult(null);
     try {
+      if (walletToken) await syncWalletData();
       const selected = scenarioGroups[activeDomain].find((item) => item.value === scenario);
       const numericKeys = selected.fields.map(([key]) => key);
       const result = await request(`/simulation/${user.id}`, { method: "POST", headers: authHeaders, body: JSON.stringify({ domain: activeDomain, simulation_type: scenario, parameters: cleanPayload(scenarioParams, numericKeys) }) });
@@ -344,7 +354,9 @@ function App() {
   }
 
   async function syncWalletData(walletAccessToken = walletToken) {
-    if (!user || !walletAccessToken) return false;
+    if (!user || !walletAccessToken || walletSyncBusy.current) return false;
+    walletSyncBusy.current = true;
+    try {
     const synced = await request(`/users/${user.id}/financial/sync`, {
       method: "POST",
       headers: authHeaders,
@@ -352,8 +364,40 @@ function App() {
     });
     setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
     setProfileExists((current) => ({ ...current, financial: true }));
+    setWalletSnapshot(synced.wallet_snapshot);
+    setWalletSyncedAt(synced.wallet_synced_at);
     return true;
+    } finally { walletSyncBusy.current = false; }
   }
+
+  useEffect(() => {
+    if (!user || !token || !walletToken || editingProfile || loading) return;
+    let cancelled = false;
+    async function refreshBank() {
+      if (cancelled || document.visibilityState === "hidden") return;
+      try {
+        const synced = await syncWalletData(walletToken);
+        if (synced && !cancelled) {
+          const twin = await request(`/users/${user.id}/twin/`, { headers: authHeaders });
+          if (!cancelled) setTwinData(twin);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        if (error.status === 401) {
+          sessionStorage.removeItem("pt_wallet_token");
+          setWalletToken("");
+          setStatus({ type: "error", message: "Bank connection expired. Reconnect Persona Wallet; the last synced data is retained." });
+        } else {
+          setStatus({ type: "error", message: `Bank refresh failed: ${error.message}. Last synced data is retained.` });
+        }
+      }
+    }
+    refreshBank();
+    const interval = setInterval(refreshBank, 30000);
+    window.addEventListener("focus", refreshBank);
+    document.addEventListener("visibilitychange", refreshBank);
+    return () => { cancelled = true; clearInterval(interval); window.removeEventListener("focus", refreshBank); document.removeEventListener("visibilitychange", refreshBank); };
+  }, [user?.id, token, walletToken, editingProfile, loading]);
 
   async function refreshDashboard() {
     setLoading(true);
@@ -460,6 +504,8 @@ function App() {
         body: JSON.stringify({ wallet_token: nextToken }),
       });
       setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
+      setWalletSnapshot(synced.wallet_snapshot);
+      setWalletSyncedAt(synced.wallet_synced_at);
       setProfileExists((current) => ({ ...current, financial: true }));
       setWalletModalOpen(false);
       setStatus({ type: "success", message: "Financial information synced from Persona Wallet." });
@@ -495,6 +541,8 @@ function App() {
         body: JSON.stringify({ wallet_token: walletToken }),
       });
       setProfiles((current) => ({ ...current, financial: profileToForm("financial", synced) }));
+      setWalletSnapshot(synced.wallet_snapshot);
+      setWalletSyncedAt(synced.wallet_synced_at);
       setProfileExists((current) => ({ ...current, financial: true }));
       setWalletAccountModalOpen(false);
       setWalletAccountForm({ name: "", balance: "", currency: "INR" });
@@ -505,6 +553,8 @@ function App() {
   }
 
   function signOut() {
+    setWalletSnapshot(null);
+    setWalletSyncedAt(null);
     localStorage.removeItem("pt_token");
     setToken(null);
     setUser(null);
@@ -710,7 +760,10 @@ function App() {
               )}
 
               {activeProfileTab === 'financial' && (
+                <>
                 <DomainPanel domain="financial" icon={<Banknote size={18} strokeWidth={2} />} profile={profiles.financial} exists={profileExists.financial} editing={editingProfile} loading={loading} onChange={updateProfileField} onSave={saveDomainProfile} onImport={handleImport} onEdit={() => setEditingProfile(true)} onCancel={() => setEditingProfile(false)} onSync={() => handleImport("financial")} />
+                <BankSnapshot snapshot={walletSnapshot} syncedAt={walletSyncedAt} connected={Boolean(walletToken)} />
+                </>
               )}
 
               {activeProfileTab === 'career' && (
@@ -883,6 +936,28 @@ function GitHubModal({ form, loading, onChange, onSubmit, onClose }) {
     </div>
   );
 }
+function BankSnapshot({ snapshot, syncedAt, connected }) {
+  const twin = snapshot?.financial_twin;
+  if (!twin) return null;
+  const metric = twin.metrics || {};
+  const amount = (value) => value == null ? "—" : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(value));
+  return <section className="panel bank-snapshot">
+    <h2>Persona Wallet bank data</h2>
+    <p className="modal-copy">{connected ? "Refreshes every 30 seconds while this tab is active." : "Reconnect your wallet to receive updates."} Last successful sync: {syncedAt ? new Date(syncedAt).toLocaleString() : "not available"}.</p>
+    <p className="modal-copy">Income and expenses use {twin.period?.months} months ({twin.period?.start} – {twin.period?.end}). Account balances are current.</p>
+    <dl className="bank-metrics">
+      {[["Current bank balance", amount(metric.cash_balance)], ["Declared salary", amount(twin.profile?.monthly_salary)], ["Expense / income", metric.expense_to_income_percent == null ? "—" : `${metric.expense_to_income_percent}%`], ["Monthly EMIs", amount(metric.declared_monthly_emi)], ["Mortgage outstanding", amount(metric.mortgage_outstanding)], ["Estimated net worth", amount(metric.estimated_net_worth)]].map(([name, value]) => <div key={name}><dt>{name}</dt><dd>{value}</dd></div>)}
+    </dl>
+    <h3>Bank accounts</h3>
+    {(twin.accounts || []).map((account) => <p key={account.id}>{account.name} · {account.currency} {Number(account.balance).toLocaleString("en-IN")}</p>)}
+    <h3>Loans and mortgages</h3>
+    {(twin.liabilities || []).length ? twin.liabilities.map((loan) => <p key={loan.id}>{loan.name} · outstanding {amount(loan.outstanding_amount)} · EMI {amount(loan.monthly_payment)} · {loan.annual_interest_rate}% · {loan.remaining_months} months remaining</p>) : <p>No liabilities recorded in Persona Wallet.</p>}
+    <h3>Recent bank activity</h3>
+    <div className="bank-table"><table><thead><tr><th>Date</th><th>Description</th><th>Debit / credit</th><th>Balance</th></tr></thead><tbody>{(twin.recent_transactions || []).map((row) => <tr key={`${row.account_id}-${row.source}-${row.id}`}><td>{row.date}</td><td>{row.description}</td><td>{row.direction === "INFLOW" ? "+" : "−"}{amount(row.amount)}</td><td>{amount(row.balance)}</td></tr>)}</tbody></table></div>
+    <p className="modal-copy">Import statements and make transfers in Persona Wallet. This twin mirrors the bank; it does not maintain a separate spendable balance.</p>
+  </section>;
+}
+
 function ProfileDetails({ icon, title: panelTitle, exists, values, onEdit, syncLabel, onSync, loading }) {
   return (
     <div className="panel profile-details">

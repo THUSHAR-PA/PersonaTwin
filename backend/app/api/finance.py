@@ -40,7 +40,9 @@ def create_profile(
     user_id: UUID,
     profile: FinancialProfileCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     try:
         return create_financial_profile(
             db,
@@ -62,7 +64,9 @@ def create_profile(
 def get_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     profile = get_financial_profile(
         db,
         user_id,
@@ -85,7 +89,9 @@ def update_profile(
     user_id: UUID,
     profile: FinancialProfileUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     updated = update_financial_profile(
         db,
         user_id,
@@ -108,7 +114,9 @@ def update_profile(
 def delete_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     deleted = delete_financial_profile(
         db,
         user_id,

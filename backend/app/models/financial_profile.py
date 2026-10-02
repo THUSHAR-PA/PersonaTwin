@@ -1,6 +1,7 @@
 import uuid
 
-from sqlalchemy import Float, ForeignKey
+from sqlalchemy import Float, ForeignKey, JSON, DateTime
+from datetime import datetime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,6 +48,9 @@ class FinancialProfile(Base):
         Float,
         default=0
     )
+
+    wallet_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    wallet_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped["User"] = relationship(
         "User",

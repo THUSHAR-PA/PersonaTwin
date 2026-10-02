@@ -54,6 +54,7 @@ def get_twin_summary(
             "monthly_expense": getattr(financial, "monthly_expense", 0),
             "current_savings": getattr(financial, "current_savings", 0),
             "debts": getattr(financial, "debts", 0),
+            "wallet_snapshot": getattr(financial, "wallet_snapshot", None),
         },
         career_profile={
             "years_of_experience": getattr(career, "years_of_experience", 0),
@@ -74,6 +75,8 @@ def get_twin_summary(
         "learning_score": twin.learning_score,
         "profile_summary": twin.profile_summary,
         "prediction": twin.predict(),
+        "financial_twin": (getattr(financial, "wallet_snapshot", None) or {}).get("financial_twin"),
+        "wallet_synced_at": getattr(financial, "wallet_synced_at", None),
     }
 
 
@@ -108,6 +111,7 @@ def run_twin_simulation(
             "monthly_expense": getattr(financial, "monthly_expense", 0),
             "current_savings": getattr(financial, "current_savings", 0),
             "debts": getattr(financial, "debts", 0),
+            "wallet_snapshot": getattr(financial, "wallet_snapshot", None),
         },
         career_profile={
             "years_of_experience": getattr(career, "years_of_experience", 0),
@@ -122,3 +126,4 @@ def run_twin_simulation(
     )
 
     return twin.simulate(payload.scenario, **payload.parameters)
+

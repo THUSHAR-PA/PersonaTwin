@@ -1108,3 +1108,12 @@ button:disabled {
     margin: 16px;
   }
 }
+
+.bank-snapshot { margin-top: 20px; }
+.bank-snapshot h3 { margin-top: 22px; }
+.bank-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 20px 0; }
+.bank-metrics dt { color: var(--text-muted, #64748b); font-size: 12px; }
+.bank-metrics dd { margin: 6px 0 0; font-weight: 600; }
+.bank-table { overflow-x: auto; margin-top: 12px; }
+.bank-table table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+.bank-table th, .bank-table td { padding: 10px; border-bottom: 1px solid #e2e8f0; }
