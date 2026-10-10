@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -29,6 +30,17 @@ router = APIRouter(
     prefix="/users/{user_id}/financial",
     tags=["Financial Profile"],
 )
+
+
+def _is_wallet_schema_error(error: SQLAlchemyError) -> bool:
+    message = str(error).lower()
+    return (
+        "financial_profiles" in message
+        and (
+            "wallet_snapshot" in message
+            or "wallet_synced_at" in message
+        )
+    )
 
 
 @router.post(
@@ -197,3 +209,11 @@ def sync_profile(
         raise HTTPException(status_code=401, detail=str(error))
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error))
+    except SQLAlchemyError as error:
+        db.rollback()
+        if not _is_wallet_schema_error(error):
+            raise
+        raise HTTPException(
+            status_code=503,
+            detail="Wallet sync database columns are missing. Run `alembic upgrade head` from the backend directory, then try syncing again.",
+        )

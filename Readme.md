@@ -133,6 +133,15 @@ README.md
 
 The project documentation currently includes:
 
+- [CURRENT_STATE.md](CURRENT_STATE.md) - consolidated implemented features, recorded verification and remaining work (updated October 10, 2026)
+- [docs/frontend-workflow.md](docs/frontend-workflow.md) - current simulation navigation and demonstration
+- [docs/expense-evaluation.md](docs/expense-evaluation.md) - independent held-out expense evaluation protocol
+
+- [docs/file-guide.md](docs/file-guide.md) - what each source file does and how requests move through the project
+- [docs/project-workflow.md](docs/project-workflow.md) - active development workflow, milestones, and acceptance checks
+- [docs/requirements-map.md](docs/requirements-map.md) - PDF requirements, current code, gaps, and the first complete decision flow
+- [docs/decision-engine.md](docs/decision-engine.md) - implemented decisions, model card, limitations, and verification commands
+- [docs/delivery-20-days.md](docs/delivery-20-days.md) - delivery schedule for the remaining 20 days
 - [docs/database_models.md](docs/database_models.md) - database model design and schema explanation
 - [docs/alembic.md](docs/alembic.md) - Alembic migration workflow
 - [docs/implementation_progress.md](docs/implementation_progress.md) - summary of the work completed so far

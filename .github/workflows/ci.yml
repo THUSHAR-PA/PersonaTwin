@@ -1,0 +1,96 @@
+name: Verify PersonaTwin
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: personatwin_test
+          POSTGRES_PASSWORD: isolated_ci_password
+          POSTGRES_DB: personatwin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U personatwin_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: postgresql://personatwin_test:isolated_ci_password@localhost:5432/personatwin_test
+      SECRET_KEY: isolated_ci_signing_key_not_for_deployment
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pytest tests -q
+      - name: PostgreSQL migration round trip
+        run: |
+          alembic upgrade head
+          alembic downgrade 20261003_wallet_snapshot
+          alembic upgrade head
+      - name: Running API smoke test
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://localhost:8000/healthz; then break; fi
+            sleep 2
+          done
+          python scripts/smoke_decisions.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Desktop and mobile decision journeys
+        run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl --fail --silent http://localhost:8000/healthz; then break; fi
+            sleep 2
+          done
+          cd ../frontend
+          npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: frontend/test-results/
+          if-no-files-found: ignore
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build

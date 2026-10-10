@@ -4,6 +4,8 @@ import os
 import httpx
 from sqlalchemy.orm import Session
 
+from app.services.twin_state_service import capture_state
+
 from app.models.user import User
 from app.models.career_profile import CareerProfile
 from app.schemas.career_profile import (
@@ -48,6 +50,7 @@ def create_career_profile(
     )
 
     db.add(profile)
+    capture_state(db, user_id, source="career_profile")
     db.commit()
     db.refresh(profile)
 
@@ -94,6 +97,7 @@ def update_career_profile(
     for field, value in update_data.items():
         setattr(profile, field, value)
 
+    capture_state(db, user_id, source="career_profile")
     db.commit()
     db.refresh(profile)
 
@@ -118,6 +122,7 @@ def delete_career_profile(
         return False
 
     db.delete(profile)
+    capture_state(db, user_id, source="career_profile")
     db.commit()
 
     return True
@@ -256,6 +261,7 @@ def sync_github_data(
         for field, value in values.items():
             setattr(profile, field, value)
 
+    capture_state(db, user_id, source="career_profile")
     db.commit()
     db.refresh(profile)
     return profile

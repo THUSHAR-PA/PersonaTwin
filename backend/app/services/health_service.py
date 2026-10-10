@@ -2,6 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.services.twin_state_service import capture_state
+
 from app.models.user import User
 from app.models.health_profile import HealthProfile
 from app.schemas.health_profile import (
@@ -44,6 +46,7 @@ def create_health_profile(
     )
 
     db.add(profile)
+    capture_state(db, user_id, source="health_profile")
     db.commit()
     db.refresh(profile)
 
@@ -88,6 +91,7 @@ def update_health_profile(
     for field, value in update_data.items():
         setattr(profile, field, value)
 
+    capture_state(db, user_id, source="health_profile")
     db.commit()
     db.refresh(profile)
 
@@ -112,6 +116,7 @@ def delete_health_profile(
         return False
 
     db.delete(profile)
+    capture_state(db, user_id, source="health_profile")
     db.commit()
 
     return True
