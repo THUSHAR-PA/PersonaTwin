@@ -17,8 +17,10 @@ sections below describe the inherited decision workspace; Chat is now the defaul
 This branch contains the prototype source; deployment remains unverified.
 The first laptop Qwen smoke run passed 1/8 extraction checks. The extraction
 prompt now includes worked examples and requires every output field, with a
-verbose smoke option for diagnosis. Real-model success still needs a laptop rerun;
-automated HTTP substitutes do not establish Qwen extraction quality.
+verbose smoke option for diagnosis. The laptop rerun passed 7/8 checks, with
+fractional rupee/lakh purchase extraction still returning empty updates. An explicit
+fractional rupee/lakh example has now been added; its real-model result is pending.
+Automated HTTP substitutes do not establish Qwen extraction quality.
 
 PersonaTwin has a React/Vite frontend, FastAPI backend, SQLAlchemy/PostgreSQL
 persistence and Alembic migrations. The implemented prototype supports profiles,
