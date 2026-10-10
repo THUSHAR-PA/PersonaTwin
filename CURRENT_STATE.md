@@ -15,6 +15,10 @@ rules and rerun counterfactuals. Persona Models integration remains deferred.
 See [chat-demo.md](docs/chat-demo.md) for setup, demo inputs and limits. The earlier
 sections below describe the inherited decision workspace; Chat is now the default.
 This branch contains the prototype source; deployment remains unverified.
+The first laptop Qwen smoke run passed 1/8 extraction checks. The extraction
+prompt now includes worked examples and requires every output field, with a
+verbose smoke option for diagnosis. Real-model success still needs a laptop rerun;
+automated HTTP substitutes do not establish Qwen extraction quality.
 
 PersonaTwin has a React/Vite frontend, FastAPI backend, SQLAlchemy/PostgreSQL
 persistence and Alembic migrations. The implemented prototype supports profiles,

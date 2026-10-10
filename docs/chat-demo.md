@@ -68,7 +68,7 @@ Exit its interactive prompt with `/bye`; the Ollama service should remain runnin
 In the activated backend terminal, test the actual model:
 
 ```bat
-python scripts\smoke_chat_model.py
+python scripts\smoke_chat_model.py --verbose
 ```
 
 This sends eight synthetic prompts to your actual model, checks extracted values

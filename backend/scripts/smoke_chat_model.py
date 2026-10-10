@@ -1,5 +1,6 @@
 """Check the actual configured Ollama on synthetic prompts, without a database."""
 
+import argparse
 import json
 from pathlib import Path
 import sys
@@ -92,6 +93,9 @@ CASES = [
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--verbose", action="store_true", help="Print extracted JSON for these synthetic prompts only.")
+    args = parser.parse_args()
     status = model_status()
     print(json.dumps(status))
     if not status["available"]:
@@ -103,6 +107,8 @@ def main():
         start = time.perf_counter()
         try:
             parsed = extract_intent(question, plan, previous)
+            if args.verbose:
+                print(json.dumps(parsed.model_dump(), ensure_ascii=False))
             assert parsed.scenario == scenario, (
                 f"Expected {scenario}; got {parsed.scenario}"
             )
@@ -123,7 +129,9 @@ def main():
                         "The model unexpectedly discarded the active plan."
                     )
                 if name == "explanation follow-up":
-                    assert parsed.response_kind == "explain"
+                    assert parsed.response_kind == "explain", (
+                        f"Expected explain; got {parsed.response_kind}"
+                    )
             else:
                 assert not parsed.updates, (
                     "Ambiguous annual salary must not populate monthly inputs."

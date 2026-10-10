@@ -425,7 +425,9 @@ def test_ollama_request_schema_and_invalid_response(monkeypatch):
 
     monkeypatch.setattr(httpx.Client, "post", post)
     assert chat_llm.extract_intent("hello", {}, "").scenario == "summary"
-    assert seen[0]["format"] == ChatIntent.model_json_schema()
+    assert seen[0]["format"]["required"] == list(ChatIntent.model_fields)
+    assert json.loads(seen[0]["messages"][-1]["content"])["latest_message"] == "hello"
+    assert len(seen[0]["messages"]) > 2
     assert seen[0]["think"] is False and seen[0]["stream"] is False
     monkeypatch.setattr(
         httpx.Client,
