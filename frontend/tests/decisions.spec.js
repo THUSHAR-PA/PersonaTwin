@@ -79,7 +79,7 @@ test("shared layouts across overview, profiles, dialogs and simulations", async 
   if (testInfo.project.name === "desktop") {
     for (const width of [320, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const view of ["Overview", "Profiles", "Simulations"]) {
+      for (const view of ["Chat", "Overview", "Profiles", "Simulations"]) {
         await page.getByRole("button", { name: view, exact: true }).click();
         await expectLayoutFits(page);
         await page.screenshot({ path: testInfo.outputPath(`${view.toLowerCase()}-${width}.png`), fullPage: true });
@@ -191,6 +191,7 @@ test("career assumptions and invalid spending reduction", async ({ page, account
 test("simulation entry shows saved finances and offers profile setup when missing", async ({ page, account, request }) => {
   await page.addInitScript(token => localStorage.setItem("pt_token", token), account.token);
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "Simulations", exact: true }).click();
   await expect(page.getByRole("tab", { name: "New simulation", exact: true })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("button", { name: "Decisions", exact: true })).toHaveCount(0);
   const finances = page.getByRole("region", { name: "Starting finances" });

@@ -11,7 +11,11 @@ export default defineConfig({
   globalSetup: "./tests/check-servers.js",
   timeout: 60000,
   fullyParallel: false,
-  use: { baseURL, reducedMotion: "reduce", navigationTimeout: 15000, trace: "retain-on-failure", screenshot: "only-on-failure" },
+  use: {
+    baseURL, reducedMotion: "reduce", navigationTimeout: 15000,
+    trace: "retain-on-failure", screenshot: "only-on-failure",
+    ...(process.env.E2E_CHROMIUM_EXECUTABLE ? { launchOptions: { executablePath: process.env.E2E_CHROMIUM_EXECUTABLE } } : {}),
+  },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" } },

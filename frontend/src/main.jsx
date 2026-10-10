@@ -8,6 +8,7 @@ import {
 import { TwinMark, IconOverview, IconProfiles, IconSimulations } from "./icons";
 import "./styles.css";
 import DecisionWorkspace from "./DecisionWorkspace";
+import ChatWorkspace from "./ChatWorkspace";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -173,7 +174,7 @@ function App() {
   const [authForm, setAuthForm] = useState({ full_name: "", email: "", password: "" });
   const [userForm, setUserForm] = useState(emptyUser);
 
-  const [currentView, setCurrentView] = useState("simulations");
+  const [currentView, setCurrentView] = useState("chat");
   const [activeProfileTab, setActiveProfileTab] = useState("identity");
   const [editingProfile, setEditingProfile] = useState(false);
   const [twinData, setTwinData] = useState(null);
@@ -296,7 +297,7 @@ function App() {
       setGithubForm({ username: "", token: "" });
       sessionStorage.removeItem("pt_github_username");
       sessionStorage.removeItem("pt_github_token");
-      setCurrentView("overview");
+      setCurrentView("chat");
       setActiveProfileTab("identity");
       setEditingProfile(false);
       setToken(data.access_token);
@@ -571,7 +572,7 @@ function App() {
     setGithubModalOpen(false);
     sessionStorage.removeItem("pt_github_username");
     sessionStorage.removeItem("pt_github_token");
-    setCurrentView("overview");
+    setCurrentView("chat");
     setActiveProfileTab("identity");
     setEditingProfile(false);
     setStatus({ type: "idle", message: "" });
@@ -625,6 +626,9 @@ function App() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
+          <button aria-current={currentView === 'chat' ? 'page' : undefined} className={currentView === 'chat' ? 'active' : ''} onClick={() => setCurrentView('chat')}>
+            <Sparkles size={16} strokeWidth={2} /> Chat
+          </button>
           <button aria-current={currentView === 'overview' ? 'page' : undefined} className={currentView === 'overview' ? 'active' : ''} onClick={() => setCurrentView('overview')}>
             <IconOverview size={16} strokeWidth={2} /> Overview
           </button>
@@ -683,6 +687,9 @@ function App() {
             onClose={() => setGithubModalOpen(false)}
           />
         )}
+
+        {currentView === 'chat' && <ChatWorkspace key={user.id} userId={user.id} token={token}
+          onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }} />}
 
         {currentView === 'simulations' && <DecisionWorkspace key={user.id} userId={user.id} token={token}
           onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }}

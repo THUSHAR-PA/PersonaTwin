@@ -133,6 +133,7 @@ README.md
 
 The project documentation currently includes:
 
+- [docs/chat-demo.md](docs/chat-demo.md) - conversational prototype, local Ollama setup, explanations and professor demo
 - [CURRENT_STATE.md](CURRENT_STATE.md) - consolidated implemented features, recorded verification and remaining work (updated October 10, 2026)
 - [docs/frontend-workflow.md](docs/frontend-workflow.md) - current simulation navigation and demonstration
 - [docs/expense-evaluation.md](docs/expense-evaluation.md) - independent held-out expense evaluation protocol

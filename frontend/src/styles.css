@@ -361,8 +361,10 @@ input[type="checkbox"] { width: 18px; height: 18px; min-height: 18px; flex: 0 0 
 @media (max-width: 360px) {
   .workspace { padding-inline: 12px; }
   .sidebar { padding-inline: 12px; }
+  .sidebar-nav button { font-size: 11px; padding-inline: 3px; }
   .profile-value-grid, .metrics-list { grid-template-columns: minmax(0, 1fr); }
   .auth-panel { padding: 24px 20px; }
+  .domain-tabs button { font-size: 12px; padding-inline: 4px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

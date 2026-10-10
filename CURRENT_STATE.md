@@ -2,10 +2,19 @@
 
 Updated October 10, 2026 from the working tree, source code and existing progress log.
 This document replaces the outdated July 19 scaffold inventory. It includes work
-already present in the repository and the current uncommitted implementation;
+already present in the repository and the chat implementation;
 it does not attribute all existing code to this documentation session.
 
 ## Status
+
+The `feature/chat-decision-assistant` branch adds a chat-first prototype
+on top of `8c611b6`. It includes owned saved conversations, local Ollama structured
+intent extraction, live profile loading without requiring an old snapshot,
+purchase/loan/savings/job-change comparisons, quoted inputs, auditable selection
+rules and rerun counterfactuals. Persona Models integration remains deferred.
+See [chat-demo.md](docs/chat-demo.md) for setup, demo inputs and limits. The earlier
+sections below describe the inherited decision workspace; Chat is now the default.
+This branch contains the prototype source; deployment remains unverified.
 
 PersonaTwin has a React/Vite frontend, FastAPI backend, SQLAlchemy/PostgreSQL
 persistence and Alembic migrations. The implemented prototype supports profiles,
@@ -107,6 +116,15 @@ still in progress; production deployment and real-data model quality are not ver
 - System fonts replace the external font request. Outcome tables adapt to narrow screens.
 
 ## Verification evidence
+
+Chat prototype verification on October 10, 2026: 71 backend tests passed, including
+chat arithmetic, ownership, evidence validation, concurrent-write protection and
+the new migration's SQLite round trip. All 16 desktop/mobile browser cases passed
+against a disposable SQLite-backed API with an explicitly substituted Ollama
+endpoint. The existing running-API smoke test and the production frontend build
+also passed. Browser screenshots were inspected. These checks do not establish
+live Qwen interpretation quality, live Wallet behavior, a PostgreSQL migration
+execution, or deployed operation. The model smoke script is provided for the laptop.
 
 On October 10, branch preparation reran all 47 backend tests and the frontend
 production build successfully; dependency deprecation warnings remain. Whitespace

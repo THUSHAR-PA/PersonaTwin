@@ -37,8 +37,8 @@ def parse_monthly_history(text: str) -> list[dict]:
     return rows
 
 
-def capture_state(db: Session, user_id, source="decision", currency=None, history=None, history_source=None):
-    db.flush()
+def current_state_data(db: Session, user_id, currency=None, history=None, history_source=None):
+    """Read live profiles even when an older account has no saved TwinState."""
     user = db.get(User, user_id)
     financial = db.query(FinancialProfile).filter_by(user_id=user_id).first()
     career = db.query(CareerProfile).filter_by(user_id=user_id).first()
@@ -85,6 +85,13 @@ def capture_state(db: Session, user_id, source="decision", currency=None, histor
     if history is not None:
         data["monthly_history"] = history
         data["history_source"] = {"name": history_source, "consented_at": datetime.now(timezone.utc).isoformat(), "kind": "user_monthly_csv"}
+    return data
+
+
+def capture_state(db: Session, user_id, source="decision", currency=None, history=None, history_source=None):
+    db.flush()
+    data = current_state_data(db, user_id, currency, history, history_source)
+    previous = db.query(TwinState).filter_by(user_id=user_id).order_by(TwinState.created_at.desc()).first()
     if previous and previous.data == data:
         return previous
     state = TwinState(user_id=user_id, source=source, data=data)

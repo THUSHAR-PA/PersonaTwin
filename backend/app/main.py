@@ -9,6 +9,7 @@ from app.api.simulation import router as simulation_router
 from app.api.twin import router as twin_router
 from app.api.users import router as user_router
 from app.api.decisions import router as decision_router
+from app.api.chat import router as chat_router
 
 app = FastAPI(
     title="PersonaTwin API",
@@ -34,6 +35,7 @@ app.include_router(simulation_router)
 app.include_router(twin_router)
 app.include_router(auth_router)
 app.include_router(decision_router)
+app.include_router(chat_router)
 
 
 @app.get("/healthz")
