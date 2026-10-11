@@ -8,7 +8,7 @@ from app.services.simulation_service import run_job_switch_simulation
 class DigitalTwin:
 
     def __init__(self):
-        self.name = "Thushar"
+        self.name = "Unnamed profile"
         self.career_score = 0
         self.finance_score = 0
         self.learning_score = 0
@@ -81,8 +81,8 @@ class DigitalTwin:
             "finance_score": round(self.finance_score, 1),
             "learning_score": round(self.learning_score, 1),
             "summary": (
-                "Your digital twin indicates strong potential in your current trajectory, "
-                "with the best opportunities in career growth and personal development."
+                "These profile scores are descriptive heuristics, not trained predictions. "
+                "Saved decisions use your financial state and disclose their forecast assumptions."
             ),
             "recommendations": [
                 "Continue building your skill stack in the direction of your dream role.",

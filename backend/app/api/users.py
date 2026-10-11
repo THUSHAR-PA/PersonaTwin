@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.dependencies.auth import ensure_user_owns_resource, get_current_user
+from app.models.user import User
 from app.schemas.user import (
     UserCreate,
     UserUpdate,
@@ -52,12 +54,13 @@ def register_user(
 )
 def get_users(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Retrieve all users.
     """
 
-    return get_all_users(db)
+    return [current_user]
 
 
 @router.get(
@@ -67,11 +70,13 @@ def get_users(
 def get_user(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Retrieve a user by ID.
     """
 
+    ensure_user_owns_resource(user_id, current_user)
     user = get_user_by_id(db, user_id)
 
     if user is None:
@@ -91,11 +96,13 @@ def update_user_profile(
     user_id: UUID,
     user_data: UserUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update a user's profile.
     """
 
+    ensure_user_owns_resource(user_id, current_user)
     user = update_user(
         db=db,
         user_id=user_id,
@@ -118,11 +125,13 @@ def update_user_profile(
 def remove_user(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Delete a user.
     """
 
+    ensure_user_owns_resource(user_id, current_user)
     deleted = delete_user(
         db=db,
         user_id=user_id,

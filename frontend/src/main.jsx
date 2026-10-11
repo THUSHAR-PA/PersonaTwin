@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { TwinMark, IconOverview, IconProfiles, IconSimulations } from "./icons";
 import "./styles.css";
+import DecisionWorkspace from "./DecisionWorkspace";
+import ChatWorkspace from "./ChatWorkspace";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -172,7 +174,7 @@ function App() {
   const [authForm, setAuthForm] = useState({ full_name: "", email: "", password: "" });
   const [userForm, setUserForm] = useState(emptyUser);
 
-  const [currentView, setCurrentView] = useState("overview");
+  const [currentView, setCurrentView] = useState("chat");
   const [activeProfileTab, setActiveProfileTab] = useState("identity");
   const [editingProfile, setEditingProfile] = useState(false);
   const [twinData, setTwinData] = useState(null);
@@ -295,7 +297,7 @@ function App() {
       setGithubForm({ username: "", token: "" });
       sessionStorage.removeItem("pt_github_username");
       sessionStorage.removeItem("pt_github_token");
-      setCurrentView("overview");
+      setCurrentView("chat");
       setActiveProfileTab("identity");
       setEditingProfile(false);
       setToken(data.access_token);
@@ -570,7 +572,7 @@ function App() {
     setGithubModalOpen(false);
     sessionStorage.removeItem("pt_github_username");
     sessionStorage.removeItem("pt_github_token");
-    setCurrentView("overview");
+    setCurrentView("chat");
     setActiveProfileTab("identity");
     setEditingProfile(false);
     setStatus({ type: "idle", message: "" });
@@ -592,8 +594,7 @@ function App() {
               <TwinMark size={20} strokeWidth={1.8} />
               <span>PersonaTwin</span>
             </div>
-            <h1>Your digital twin command center.</h1>
-            <p>Build a cross-domain profile, inspect live analytics, and run explainable what-if simulations.</p>
+            <h1>{authMode === "register" ? "Create your account" : "Welcome back"}</h1>
           </div>
           <form className="auth-form" onSubmit={handleAuth}>
             <div className="segmented">
@@ -624,21 +625,24 @@ function App() {
           <span>PersonaTwin</span>
         </div>
 
-        <nav className="sidebar-nav">
-          <button className={currentView === 'overview' ? 'active' : ''} onClick={() => setCurrentView('overview')}>
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          <button aria-current={currentView === 'chat' ? 'page' : undefined} className={currentView === 'chat' ? 'active' : ''} onClick={() => setCurrentView('chat')}>
+            <Sparkles size={16} strokeWidth={2} /> Chat
+          </button>
+          <button aria-current={currentView === 'overview' ? 'page' : undefined} className={currentView === 'overview' ? 'active' : ''} onClick={() => setCurrentView('overview')}>
             <IconOverview size={16} strokeWidth={2} /> Overview
           </button>
-          <button className={currentView === 'profiles' ? 'active' : ''} onClick={() => setCurrentView('profiles')}>
+          <button aria-current={currentView === 'profiles' ? 'page' : undefined} className={currentView === 'profiles' ? 'active' : ''} onClick={() => setCurrentView('profiles')}>
             <IconProfiles size={16} strokeWidth={2} /> Profiles
           </button>
-          <button className={currentView === 'simulations' ? 'active' : ''} onClick={() => setCurrentView('simulations')}>
+          <button aria-current={currentView === 'simulations' ? 'page' : undefined} className={currentView === 'simulations' ? 'active' : ''} onClick={() => setCurrentView('simulations')}>
             <IconSimulations size={16} strokeWidth={2} /> Simulations
           </button>
         </nav>
 
-        <button className="ghost-action" onClick={signOut}>
+        <button className="ghost-action" onClick={signOut} aria-label="Sign out" title="Sign out">
           <LogOut size={16} strokeWidth={2} />
-          Sign out
+          <span>Sign out</span>
         </button>
       </aside>
 
@@ -648,9 +652,8 @@ function App() {
             <span className="eyebrow">Digital Twin Dashboard</span>
             <h1>{user.full_name}</h1>
           </div>
-          <button className="secondary-action" type="button" onClick={refreshDashboard} disabled={loading} >
+          <button className="tool-action" type="button" onClick={refreshDashboard} disabled={loading} aria-label="Refresh Data" title="Refresh data">
             <RefreshCw size={14} strokeWidth={2} />
-            Refresh Data
           </button>
         </header>
 
@@ -684,6 +687,41 @@ function App() {
             onClose={() => setGithubModalOpen(false)}
           />
         )}
+
+        {currentView === 'chat' && <ChatWorkspace key={user.id} userId={user.id} token={token}
+          onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }} />}
+
+        {currentView === 'simulations' && <DecisionWorkspace key={user.id} userId={user.id} token={token}
+          onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }}
+          calculators={
+          <div className="view-fade-in simulation-layout">
+            <form className="panel simulation-form" onSubmit={runSimulation}>
+              <PanelTitle icon={<Play size={18} strokeWidth={2} />} title="Quick calculators" badge="Formula-based" />
+              <div className="domain-tabs">
+                {Object.keys(scenarioGroups).map((domain) => (
+                  <button key={domain} type="button" className={activeDomain === domain ? "active" : ""} onClick={() => setActiveDomain(domain)}>
+                    {title(domain)}
+                  </button>
+                ))}
+              </div>
+              <label>Scenario Type
+                <select value={scenario} onChange={(event) => setScenario(event.target.value)}>
+                  {scenarioGroups[activeDomain].map((item) => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="form-grid">
+                {scenarioGroups[activeDomain].find((item) => item.value === scenario)?.fields.map(([key, label, type]) => (
+                    <Field key={key} label={label} type={type} value={scenarioParams[key] ?? ""} onChange={(value) => setScenarioParams((current) => ({ ...current, [key]: value })) } />
+                  ))}
+              </div>
+              <button className="primary-action compact" disabled={loading}><Play size={16} strokeWidth={2} /> Calculate</button>
+            </form>
+
+            <SimulationResult result={simulationResult} />
+          </div>
+          } />}
 
         {currentView === 'overview' && (
           <div className="view-fade-in">
@@ -777,35 +815,6 @@ function App() {
           </div>
         )}
 
-        {currentView === 'simulations' && (
-          <div className="view-fade-in simulation-layout">
-            <form className="panel simulation-form" onSubmit={runSimulation}>
-              <PanelTitle icon={<Play size={18} strokeWidth={2} />} title="Scenario Simulator" />
-              <div className="domain-tabs">
-                {Object.keys(scenarioGroups).map((domain) => (
-                  <button key={domain} type="button" className={activeDomain === domain ? "active" : ""} onClick={() => setActiveDomain(domain)}>
-                    {title(domain)}
-                  </button>
-                ))}
-              </div>
-              <label>Scenario Type
-                <select value={scenario} onChange={(event) => setScenario(event.target.value)}>
-                  {scenarioGroups[activeDomain].map((item) => (
-                    <option key={item.value} value={item.value}>{item.label}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="form-grid">
-                {scenarioGroups[activeDomain].find((item) => item.value === scenario)?.fields.map(([key, label, type]) => (
-                    <Field key={key} label={label} type={type} value={scenarioParams[key] ?? ""} onChange={(value) => setScenarioParams((current) => ({ ...current, [key]: value })) } />
-                  ))}
-              </div>
-              <button className="primary-action compact" disabled={loading}><Play size={16} strokeWidth={2} /> Run simulation</button>
-            </form>
-
-            <SimulationResult result={simulationResult} />
-          </div>
-        )}
       </section>
     </main>
   );

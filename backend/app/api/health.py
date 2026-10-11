@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
+from app.dependencies.auth import ensure_user_owns_resource, get_current_user
+from app.models.user import User
 from app.schemas.health_profile import (
     HealthProfileCreate,
     HealthProfileUpdate,
@@ -31,7 +33,9 @@ def create_profile(
     user_id: UUID,
     profile: HealthProfileCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     try:
         return create_health_profile(
             db,
@@ -53,7 +57,9 @@ def create_profile(
 def get_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     profile = get_health_profile(db, user_id)
 
     if profile is None:
@@ -73,7 +79,9 @@ def update_profile(
     user_id: UUID,
     profile: HealthProfileUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     updated = update_health_profile(
         db,
         user_id,
@@ -96,7 +104,9 @@ def update_profile(
 def delete_profile(
     user_id: UUID,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_user_owns_resource(user_id, current_user)
     deleted = delete_health_profile(
         db,
         user_id,

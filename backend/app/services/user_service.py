@@ -111,6 +111,8 @@ def update_user(
     for field, value in update_data.items():
         setattr(user, field, value)
 
+    from app.services.twin_state_service import capture_state
+    capture_state(db, user_id, source="identity_profile")
     db.commit()
     db.refresh(user)
 

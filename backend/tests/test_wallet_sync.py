@@ -6,6 +6,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.dialects.postgresql import JSONB
@@ -100,6 +101,19 @@ def test_sync_maps_bank_metrics_and_retains_complete_history(context, monkeypatc
         assert db.query(FinancialProfile).count() == 1
 
 
+@pytest.mark.parametrize("authorization", [None, "Basic dGVzdDp0ZXN0", "Bearer", "Bearer invalid-token"])
+def test_financial_routes_require_bearer_authentication(context, authorization):
+    client, _, ids, _ = context
+    headers = {} if authorization is None else {"Authorization": authorization}
+    url = f"/users/{ids[0]}/financial/"
+    for result in (
+        client.get(url, headers=headers),
+        client.post(f"{url}sync", headers=headers, json={"wallet_token": "token"}),
+    ):
+        assert result.status_code == 401
+        assert result.headers["WWW-Authenticate"] == "Bearer"
+
+
 def test_failed_and_malformed_refresh_keep_last_successful_snapshot(context, monkeypatch):
     client, factory, ids, headers = context
     url = f"/users/{ids[0]}/financial/sync"
@@ -112,6 +126,28 @@ def test_failed_and_malformed_refresh_keep_last_successful_snapshot(context, mon
             profile = db.query(FinancialProfile).one()
             assert profile.current_savings == 247374
             assert profile.wallet_snapshot == SNAPSHOT
+
+
+def test_sync_reports_missing_wallet_migration(context, monkeypatch):
+    client, factory, ids, headers = context
+    error = OperationalError(
+        'SELECT financial_profiles.wallet_snapshot FROM financial_profiles',
+        {},
+        Exception('column "financial_profiles.wallet_snapshot" does not exist'),
+    )
+
+    def missing_wallet_columns(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr("app.api.finance.sync_financial_summary", missing_wallet_columns)
+    result = client.post(
+        f"/users/{ids[0]}/financial/sync",
+        headers=headers[0],
+        json={"wallet_token": "token"},
+    )
+
+    assert result.status_code == 503
+    assert "alembic upgrade head" in result.json()["detail"]
 
 
 def test_income_falls_back_to_declared_only_without_activity():

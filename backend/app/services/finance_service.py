@@ -6,6 +6,8 @@ from uuid import UUID
 import httpx
 from sqlalchemy.orm import Session
 
+from app.services.twin_state_service import capture_state
+
 from app.models.user import User
 from app.models.financial_profile import FinancialProfile
 from app.schemas.financial_profile import (
@@ -135,6 +137,7 @@ def create_financial_profile(
     )
 
     db.add(profile)
+    capture_state(db, user_id, source="finance_profile")
     db.commit()
     db.refresh(profile)
 
@@ -181,6 +184,7 @@ def update_financial_profile(
     for field, value in update_data.items():
         setattr(profile, field, value)
 
+    capture_state(db, user_id, source="finance_profile")
     db.commit()
     db.refresh(profile)
 
@@ -205,6 +209,7 @@ def delete_financial_profile(
         return False
 
     db.delete(profile)
+    capture_state(db, user_id, source="finance_profile")
     db.commit()
 
     return True
@@ -251,6 +256,7 @@ def sync_financial_summary(
             setattr(profile, field, value)
     profile.wallet_snapshot = summary
     profile.wallet_synced_at = datetime.now(timezone.utc)
+    capture_state(db, user_id, source="finance_profile")
     db.commit()
     db.refresh(profile)
     return profile

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from math import pow
+from math import isfinite, pow
 from typing import Any
 
 
@@ -173,4 +173,6 @@ def _number(parameters: dict[str, Any], key: str) -> float:
 	value = parameters.get(key)
 	if isinstance(value, bool) or not isinstance(value, (int, float)):
 		raise ValueError(f"{key} must be a number.")
+	if not isfinite(value) or abs(value) > 1e12:
+		raise ValueError(f"{key} must be finite and at most 1 trillion in magnitude.")
 	return float(value)

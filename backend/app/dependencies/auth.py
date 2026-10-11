@@ -10,13 +10,20 @@ from app.auth.security import decode_access_token
 from app.database.session import get_db
 from app.models.user import User
 
-bearer_scheme = HTTPBearer(bearerFormat="JWT")
+bearer_scheme = HTTPBearer(bearerFormat="JWT", auto_error=False)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     token = credentials.credentials
 
     try:

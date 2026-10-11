@@ -85,3 +85,7 @@ class User(Base):
         uselist=False,
         cascade="all, delete-orphan"
     )
+
+    twin_states = relationship("TwinState", back_populates="user", cascade="all, delete-orphan")
+
+    conversations = relationship("ChatConversation", back_populates="user", cascade="all, delete-orphan")
