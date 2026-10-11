@@ -80,6 +80,19 @@ def merge_plan(old, intent, message):
     provenance = dict(plan.get("evidence", {}))
     seen = set()
     for update in intent.updates:
+        # Qwen can label an explicitly cheaper alternative as the original price.
+        # Correct only this narrow, positive follow-up; keep numeric/evidence checks.
+        if (
+            update.field == "price"
+            and old.get("scenario") == "purchase"
+            and "price" in old
+            and intent.scenario == "purchase"
+            and not intent.new_topic
+            and re.search(r"\b(?:choose|buy|consider)\s+(?:a|the)\s+cheaper\b", message, re.I)
+            and not re.search(r"\b(?:not|never|no|original|change|replace)\b|n['’]t\b", message, re.I)
+            and len(intent.updates) == 1
+        ):
+            update = update.model_copy(update={"field": "cheaper_price"})
         if update.field in seen:
             raise ValueError(
                 "I found more than one value for the same assumption. Please state the value you want to use."

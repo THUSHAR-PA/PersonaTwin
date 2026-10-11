@@ -19,7 +19,10 @@ The first laptop Qwen smoke run passed 1/8 extraction checks. The extraction
 prompt now includes worked examples and requires every output field, with a
 verbose smoke option for diagnosis. The laptop rerun passed 7/8 checks, with
 fractional rupee/lakh purchase extraction still returning empty updates. An explicit
-fractional rupee/lakh example has now been added; its real-model result is pending.
+fractional rupee/lakh example resolved that case on the laptop, but the cheaper
+follow-up then regressed to overwriting price (7/8 overall). A narrow deterministic
+rule now maps an explicit positive “choose a cheaper” follow-up to cheaper_price;
+its real-model smoke rerun is pending.
 Automated HTTP substitutes do not establish Qwen extraction quality.
 
 PersonaTwin has a React/Vite frontend, FastAPI backend, SQLAlchemy/PostgreSQL

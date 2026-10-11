@@ -228,6 +228,25 @@ def test_followup_retains_assumptions_and_new_topic_discards_them():
     assert "running_cost" not in merge_plan(PURCHASE, extraction, turn_text(extraction))
 
 
+
+@pytest.mark.parametrize("message,new_topic,expected_field", [
+    ("What if I choose a cheaper bike costing 80000?", False, "cheaper_price"),
+    ("Change the original price to 80000", False, "price"),
+    ("Do not choose a cheaper bike costing 80000", False, "price"),
+    ("I wouldn’t choose a cheaper bike costing 80000", False, "price"),
+    ("What if I choose a cheaper bike costing 80000?", True, "price"),
+])
+def test_cheaper_followup_corrects_mislabeled_price_without_overwriting_original(message, new_topic, expected_field):
+    extraction = ChatIntent(scenario="purchase", new_topic=new_topic,
+        updates=[{"field": "price", "value": 80000, "evidence": "80000"}])
+    result = merge_plan(PURCHASE, extraction, message)
+    assert result[expected_field] == 80000
+    if expected_field == "cheaper_price":
+        assert result["price"] == PURCHASE["price"]
+        assert result["evidence"]["cheaper_price"] == "80000"
+    assert extraction.updates[0].field == "price"
+
+
 def setup_chat(context, with_profile=True):
     client, factory, ids, headers = context
     if with_profile:
