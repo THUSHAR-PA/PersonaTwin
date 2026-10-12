@@ -1,5 +1,20 @@
 # PersonaTwin — Current State
 
+## Digital Twin dashboard — October 12, 2026
+
+The `feature/digital-twin-dashboard` branch adds an interactive Three.js /
+React Three Fiber humanoid page, real profile panels, saved-scenario previews and
+an owned read-only dashboard endpoint. Existing profile editing and simulation
+flows are reused. Unsupported predictions remain unavailable and calculated or
+heuristic values are labeled. See [digital-twin.md](docs/digital-twin.md) for setup,
+data semantics, architecture and verification limits.
+
+Verification: 86 backend tests, 11 frontend component/geometry tests and the
+production build passed. Chromium launch was blocked by the execution environment;
+browser/visual verification remains pending. The feature is prepared for branch
+review; production deployment remains unverified. The older project-state snapshot
+follows.
+
 Updated October 10, 2026 from the working tree, source code and existing progress log.
 This document replaces the outdated July 19 scaffold inventory. It includes work
 already present in the repository and the chat implementation;

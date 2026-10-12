@@ -52,7 +52,7 @@ function ProjectionChart({ result }) {
   return <figure className="decision-chart"><canvas ref={canvas} role="img" aria-label="Projected savings: baseline and alternative, with savings target. Exact amounts in the monthly projection table." /><figcaption><span className="legend-base">Keep current plan</span><span className="legend-alt">With this change</span><span className="legend-goal">Target</span>{result.uncertainty && <span>Alternative 10th-90th percentile</span>}</figcaption></figure>;
 }
 
-export default function DecisionWorkspace({ userId, token, calculators, onOpenFinancialProfile }) {
+export default function DecisionWorkspace({ userId, token, calculators, onOpenFinancialProfile, initialRunId = null }) {
   const resultSection = useRef(null);
   const [tab, setTab] = useState("new"), [form, setForm] = useState(initial);
   const [currency, setCurrency] = useState("INR"), [stateId, setStateId] = useState("");
@@ -77,6 +77,15 @@ export default function DecisionWorkspace({ userId, token, calculators, onOpenFi
     if (nextStates[0]?.data.currency) setCurrency(nextStates[0].data.currency);
   }, [api]);
   useEffect(() => { let live = true; reload().catch(e => live && setMessage({ error: true, text: e.message })).finally(() => live && setLoadingSources(false)); return () => { live = false; }; }, [reload]);
+  useEffect(() => {
+    if (!initialRunId) return;
+    let live = true;
+    setBusy(true);
+    api(`/${initialRunId}`).then(saved => { if (live) { setRun(saved); setTab("new"); } })
+      .catch(error => { if (live) setMessage({ error: true, text: error.message }); })
+      .finally(() => { if (live) setBusy(false); });
+    return () => { live = false; };
+  }, [initialRunId, api]);
   useEffect(() => {
     if (run && tab === "new") {
       resultSection.current?.focus({ preventScroll: true });
