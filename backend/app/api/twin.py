@@ -14,6 +14,7 @@ from app.services.career_service import get_career_profile
 from app.services.finance_service import get_financial_profile
 from app.services.health_service import get_health_profile
 from app.services.user_service import get_user_by_id
+from app.services.twin_dashboard_service import get_dashboard
 from app.twin.digital_twin import DigitalTwin
 
 router = APIRouter(prefix="/users/{user_id}/twin", tags=["Digital Twin"])
@@ -22,6 +23,16 @@ router = APIRouter(prefix="/users/{user_id}/twin", tags=["Digital Twin"])
 class TwinSimulationRequest(BaseModel):
     scenario: str
     parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+@router.get("/dashboard")
+def get_twin_dashboard(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    ensure_user_owns_resource(user_id, current_user)
+    return get_dashboard(db, user_id)
 
 
 @router.get("/")

@@ -1,0 +1,22 @@
+:root { color-scheme: dark; }
+body { background: #060d17; color: #e2edf8; }
+.preview-shell { max-width: 1600px; margin: 0 auto; padding: 0 36px 24px; }
+.preview-nav { min-height: 78px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #182d3c; }
+.preview-nav a { display: inline-flex; gap: 9px; align-items: center; color: #afc4d3; text-decoration: none; font-size: 12px; }
+.preview-nav .preview-brand { color: #e5f5fc; font-size: 18px; font-weight: 600; letter-spacing: -.5px; }
+.preview-brand svg { color: #6ce5ef; }
+.preview-brand span { color: #748f9f; font: 9px var(--font-mono); letter-spacing: 1.8px; margin-left: 12px; }
+.preview-notice { background: #131728; border: 1px solid #303552; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; margin: 24px 0 30px; }
+.preview-notice strong { display: block; font-size: 12px; font-weight: 600; color: #c8c7f1; }
+.preview-notice span { color: #96a7ba; font-size: 11px; }
+.preview-mode { display: flex; flex-shrink: 0; border: 1px solid #2a3550; border-radius: 5px; overflow: hidden; }
+.preview-mode button { color: #91a0b7; border: 0; background: transparent; padding: 9px 12px; font-size: 11px; min-height: 36px; }
+.preview-mode button[aria-pressed="true"] { color: #d5e9f5; background: #253045; }
+.preview-shell .dt-dialog a { text-decoration: none; }
+@media (max-width: 700px) {
+  .preview-shell { padding: 0 14px 20px; }
+  .preview-nav { min-height: 62px; }
+  .preview-brand span { display: none; }
+  .preview-nav > a:last-child { font-size: 10px; }
+  .preview-notice { flex-direction: column; align-items: flex-start; margin: 18px 0 24px; }
+}
