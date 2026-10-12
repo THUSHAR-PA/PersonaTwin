@@ -10,10 +10,11 @@ heuristic values are labeled. See [digital-twin.md](docs/digital-twin.md) for se
 data semantics, architecture and verification limits.
 
 Verification: 86 backend tests, 11 frontend component/geometry tests and the
-production build passed. Chromium launch was blocked by the execution environment;
-browser/visual verification remains pending. The feature is prepared for branch
-review; production deployment remains unverified. The older project-state snapshot
-follows.
+production build passed. GitHub Actions subsequently passed PostgreSQL migrations,
+API smoke checks and desktop/mobile browser journeys; the captured desktop and
+320px screenshots were inspected. The feature is pushed in draft PR #3. A private
+interactive preview uses clearly labeled fictional data; the full application's
+production backend deployment remains unverified. The older snapshot follows.
 
 Updated October 10, 2026 from the working tree, source code and existing progress log.
 This document replaces the outdated July 19 scaffold inventory. It includes work

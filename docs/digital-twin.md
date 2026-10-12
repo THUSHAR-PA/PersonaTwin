@@ -91,6 +91,20 @@ existing Wallet/GitHub connections as needed. Save a simulation to populate goal
 targets, scenario previews and explanations. No demo profile is injected into the
 application. Test fixtures use explicitly synthetic disposable accounts.
 
+## Interactive preview
+
+Open https://personatwin-digital-twin-preview.soundglade128.chatgpt.site.
+This private preview reuses the actual page, dialogs and interactive 3D scene.
+Its prominent notice identifies all sample data as fictional. No account, Wallet
+or backend is connected; profile editing and new simulations require the full app.
+The example/empty toggle demonstrates populated and unavailable-data states.
+
+The preview has a separate entry point and build configuration. Demo hooks are
+aliased only by `vite.twin-preview.config.js`; the normal authenticated build uses
+the real API and includes no demo profile. Run `npm run build:preview` to reproduce
+the preview in `frontend/dist-preview`. Feature code is pushed in draft PR #3;
+main has not been merged.
+
 ## Verification
 
 Verified locally on October 12, 2026:
@@ -109,8 +123,12 @@ Verified locally on October 12, 2026:
   responsive widths and API failures. **They could not run here:** Chromium's
   required local socket is blocked, and the environment's approval policy rejected
   an out-of-sandbox run. Browser launch stopped before product assertions.
-- No screenshot/visual inspection, remote CI, deployed operation, live Wallet
-  acceptance or real-model quality is claimed.
+- GitHub Actions subsequently passed for feature commit `587a6fb`: backend tests,
+  PostgreSQL migration round trip, API smoke checks, component tests, build and
+  desktop/mobile browser journeys. Actual WebGL interaction and fallback checks
+  ran on the remote runner. Desktop, 320px and WebGL screenshots were inspected.
+- The private demo preview is deployed. Full app production deployment, live
+  Wallet acceptance and real-model quality remain unverified.
 
 Repeat the checks:
 
@@ -130,8 +148,7 @@ server on port 5174. It creates and deletes disposable accounts. The existing CI
 workflow runs the full browser suite and now also runs the component tests. Remote
 CI results should be checked on the feature branch before merging.
 
-Before merging, run those browser journeys in an environment that permits
-Chromium, inspect the saved desktop/mobile screenshots, and verify the hologram's
+Before merging, confirm the latest branch's checks and verify the hologram's
 appearance and interaction on the target laptop.
 
 ## Source map
