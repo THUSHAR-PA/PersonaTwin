@@ -15,6 +15,7 @@ from app.services.finance_service import get_financial_profile
 from app.services.health_service import get_health_profile
 from app.services.user_service import get_user_by_id
 from app.services.twin_dashboard_service import get_dashboard
+from app.services.financial_intelligence_service import get_financial_intelligence
 from app.twin.digital_twin import DigitalTwin
 
 router = APIRouter(prefix="/users/{user_id}/twin", tags=["Digital Twin"])
@@ -23,6 +24,23 @@ router = APIRouter(prefix="/users/{user_id}/twin", tags=["Digital Twin"])
 class TwinSimulationRequest(BaseModel):
     scenario: str
     parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+class FinanceAnalysisRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    monthly_debt_payment: float | None = Field(default=None, ge=0, le=1e12, allow_inf_nan=False, strict=True)
+
+
+@router.get("/finance")
+def financial_workspace(user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_user_owns_resource(user_id, current_user)
+    return get_financial_intelligence(db, user_id)
+
+
+@router.post("/finance/analyze")
+def analyze_financial_workspace(user_id: UUID, payload: FinanceAnalysisRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ensure_user_owns_resource(user_id, current_user)
+    return get_financial_intelligence(db, user_id, payload.monthly_debt_payment)
 
 
 @router.get("/dashboard")

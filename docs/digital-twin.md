@@ -1,5 +1,10 @@
 # Digital Twin dashboard
 
+Finance now has a full drill-down workspace on `feature/financial-twin-intelligence`.
+See [Financial Twin intelligence](financial-intelligence.md) for its six modules,
+model/data requirements and verification status. The sections below describe the
+original hologram dashboard checkpoint.
+
 Implemented on `feature/digital-twin-dashboard`, based on `main` at `8ff5340`.
 The page is available after signing in through **Digital Twin** in the existing
 navigation. It uses the application's existing state-based navigation; it does not

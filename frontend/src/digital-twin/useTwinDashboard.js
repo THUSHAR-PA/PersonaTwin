@@ -21,7 +21,12 @@ async function read(path, token, signal) {
 }
 
 /** In-memory only. Single-flight refresh; abort and discard work on account change. */
-export function useTwinDashboard(userId, token, walletRevision) {
+export function useTwinResource(
+  userId,
+  token,
+  walletRevision,
+  resource = "dashboard",
+) {
   const [state, setState] = useState({
     data: null,
     loading: true,
@@ -39,7 +44,7 @@ export function useTwinDashboard(userId, token, walletRevision) {
     setState((previous) => ({ ...previous, loading: true }));
     try {
       const data = await read(
-        `/users/${userId}/twin/dashboard`,
+        `/users/${userId}/twin/${resource}`,
         token,
         controller.signal,
       );
@@ -62,7 +67,7 @@ export function useTwinDashboard(userId, token, walletRevision) {
       clearTimeout(timeout);
       if (pending.current === controller) pending.current = null;
     }
-  }, [userId, token]);
+  }, [userId, token, resource]);
 
   useEffect(() => {
     active.current = true;
@@ -92,6 +97,10 @@ export function useTwinDashboard(userId, token, walletRevision) {
     if (walletRevision) refresh();
   }, [walletRevision, refresh]);
   return { ...state, refresh };
+}
+
+export function useTwinDashboard(userId, token, walletRevision) {
+  return useTwinResource(userId, token, walletRevision);
 }
 
 export function useDecisionDetail(userId, token, id) {

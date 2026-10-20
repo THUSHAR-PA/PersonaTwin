@@ -1,0 +1,587 @@
+.finance-workspace {
+  max-width: 1450px;
+  margin: 0 auto;
+}
+.fi-back,
+.fi-text-button {
+  background: none;
+  border: 0;
+  color: #91c7d7;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.fi-back {
+  margin-bottom: 24px;
+}
+.fi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  margin-bottom: 30px;
+}
+.fi-header h1 {
+  font-size: clamp(27px, 3vw, 40px);
+  letter-spacing: -1.5px;
+  margin: 7px 0;
+  font-weight: 550;
+}
+.fi-header h1 span {
+  color: #72e6db;
+}
+.fi-header h1:focus {
+  outline: none;
+}
+.fi-header p,
+.fi-muted {
+  color: #97acbd;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.fi-header p {
+  margin: 0;
+}
+.fi-actions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.fi-overview {
+  border: 1px solid #284655;
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at 0 0, #1538416b, transparent 65%), #0a1723;
+  display: grid;
+  grid-template-columns: 1fr 2.6fr;
+  margin-bottom: 18px;
+}
+.fi-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px;
+  border-right: 1px solid #233b49;
+}
+.fi-balance-label {
+  font-size: 12px;
+  color: #a4b7c4;
+  margin-top: 24px;
+}
+.fi-balance > strong {
+  font-size: clamp(26px, 3vw, 39px);
+  font-weight: 500;
+  letter-spacing: -1.3px;
+  margin: 6px 0;
+}
+.fi-balance p {
+  font-size: 10px;
+  color: #84a8b6;
+  line-height: 1.7;
+  margin-bottom: 17px;
+}
+.fi-overview-grid {
+  padding: 25px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 18px;
+}
+.fi-metric {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.fi-metric > span {
+  font-size: 11px;
+  color: #9db4c4;
+}
+.fi-metric strong {
+  font-size: clamp(16px, 1.5vw, 22px);
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+}
+.fi-metric small {
+  font-size: 9px;
+  color: #87a0af;
+  line-height: 1.5;
+}
+.fi-data-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 12px 0 25px;
+  font-size: 10px;
+  color: #91adbc;
+}
+.fi-situation {
+  color: #a6cbd1;
+  font-size: 12px;
+  line-height: 1.8;
+  padding: 5px 0;
+}
+.fi-data-strip > span,
+.fi-data-strip a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.fi-data-strip a {
+  margin-left: auto;
+  color: #7fddd5;
+  text-decoration: none;
+}
+.fi-module-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px solid #1e3443;
+  padding: 18px 0 23px;
+}
+.fi-module-nav button {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 10px 12px;
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #91a9bd;
+  font-size: 10px;
+}
+.fi-module-nav button[aria-pressed="true"] {
+  border-color: #31606d;
+  color: #aff3e9;
+  background: #12313b;
+}
+.fi-module-nav button:hover {
+  background: #122733;
+  color: #d1f3f0;
+}
+.fi-module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.fi-card {
+  background: linear-gradient(145deg, #0e1e2b, #0b1520);
+  border: 1px solid #233e4f;
+  border-radius: 10px;
+  padding: 25px;
+  min-width: 0;
+}
+.fi-card h2 {
+  font-size: 17px;
+  font-weight: 550;
+  margin: 0;
+  letter-spacing: -0.25px;
+}
+.fi-card h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 20px 0 12px;
+}
+.fi-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.fi-section-title > svg {
+  color: #70d9d5;
+  flex-shrink: 0;
+}
+.fi-section-title > span {
+  font: 9px var(--font-mono);
+  color: #648895;
+  margin-left: auto;
+  order: 3;
+}
+.fi-badge {
+  display: inline-flex;
+  padding: 4px 7px;
+  font: 9px/1.4 var(--font-mono);
+  color: #a9b9cc;
+  background: #1e2b3d;
+  border: 1px solid #34465b;
+  border-radius: 4px;
+}
+.fi-badge-ml {
+  color: #a8e4de;
+  background: #113234;
+  border-color: #285b58;
+}
+.fi-badge-assumption {
+  color: #b8b8e3;
+  background: #25273e;
+  border-color: #3c3e61;
+}
+.fi-next-value {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 20px 0 12px;
+}
+.fi-next-value > span {
+  color: #9fbbca;
+  font-size: 11px;
+}
+.fi-next-value > strong {
+  font-size: 28px;
+  letter-spacing: -0.7px;
+  font-weight: 500;
+}
+.fi-card-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+.fi-card-heading strong {
+  font-weight: 500;
+}
+.fi-chart {
+  margin: 14px 0 10px;
+}
+.fi-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 190px;
+}
+.fi-chart text {
+  fill: #87a5b6;
+  font: 9px var(--font-mono);
+}
+.fi-chart details {
+  color: #95b4c5;
+  font-size: 10px;
+  margin-top: 8px;
+}
+.fi-chart summary,
+.fi-method summary,
+.fi-limitations summary {
+  cursor: pointer;
+  padding: 9px 0;
+}
+.fi-table-scroll {
+  max-height: 250px;
+  overflow: auto;
+}
+.fi-table-scroll table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+.fi-table-scroll th,
+.fi-table-scroll td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #203645;
+}
+.fi-table-scroll caption {
+  color: #8faaba;
+  padding: 10px;
+  text-align: left;
+}
+.fi-method {
+  margin-top: 18px;
+  padding-top: 8px;
+  border-top: 1px solid #203746;
+  font-size: 11px;
+  color: #98aebf;
+}
+.fi-method dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 8px;
+}
+.fi-method dd {
+  color: #c9e4ec;
+  margin: 0;
+}
+.fi-method p,
+.fi-method li {
+  line-height: 1.7;
+}
+.fi-two-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin: 24px 0;
+}
+.fi-inline-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 23px;
+}
+.fi-inline-form label {
+  flex: 1;
+}
+.finance-workspace label {
+  color: #acc1ce;
+  font-size: 11px;
+}
+.finance-workspace input,
+.finance-workspace select,
+.finance-workspace textarea {
+  background: #07121e;
+  border: 1px solid #304b5b;
+  color: #d7e8f0;
+  box-shadow: none;
+  font-size: 12px;
+}
+.fi-inline-form button {
+  font-size: 10px;
+  min-height: 42px;
+}
+.fi-callout {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #e5c69d;
+  border: 1px solid #65513c;
+  background: #2a221b;
+  padding: 12px 14px;
+  border-radius: 6px;
+}
+.fi-callout svg {
+  flex-shrink: 0;
+}
+.fi-goal {
+  border-bottom: 1px solid #223b4b;
+  padding-bottom: 20px;
+  margin-bottom: 16px;
+}
+.fi-goal h3 {
+  margin-top: 20px;
+}
+.fi-goal > div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+.fi-goal > div span,
+.fi-goal small {
+  color: #9db0c2;
+  font-size: 10px;
+}
+.fi-goal p {
+  font-size: 12px;
+  color: #abd6da;
+}
+.fi-goal small {
+  display: block;
+  line-height: 1.6;
+}
+.fi-goal .fi-text-button {
+  margin-top: 12px;
+}
+.fi-goal progress,
+.fi-category-list progress {
+  appearance: none;
+  border: none;
+  height: 4px;
+  width: 100%;
+  background: #223a48;
+  accent-color: #5cd9c8;
+  border-radius: 3px;
+}
+.fi-goal progress::-webkit-progress-bar,
+.fi-category-list progress::-webkit-progress-bar {
+  background: #223a48;
+}
+.fi-goal progress::-webkit-progress-value,
+.fi-category-list progress::-webkit-progress-value {
+  background: #5cd9c8;
+}
+.fi-goal progress::-moz-progress-bar,
+.fi-category-list progress::-moz-progress-bar {
+  background: #5cd9c8;
+}
+.fi-empty {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  padding: 28px 0;
+  gap: 5px;
+  color: #8faabc;
+  font-size: 12px;
+}
+.fi-empty h3 {
+  color: #cee8ee;
+}
+.fi-category-list {
+  display: grid;
+  gap: 13px;
+  margin-top: 18px;
+}
+.fi-category-list > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  font-size: 10px;
+  color: #a7becb;
+}
+.fi-category-list strong {
+  color: #d3e7ef;
+  font-weight: 500;
+}
+.fi-category-list progress {
+  grid-column: 1 / -1;
+  height: 3px;
+}
+.fi-behaviour-result {
+  color: #d4e9ef;
+}
+.fi-projection {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  align-items: center;
+  gap: 35px;
+  margin-top: 20px;
+}
+.fi-projection h2 {
+  margin-top: 10px;
+}
+.fi-data-section {
+  margin-top: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  scroll-margin-top: 20px;
+}
+.fi-data-section h2 {
+  margin-top: 12px;
+}
+.fi-data-section form {
+  display: grid;
+  gap: 13px;
+}
+.fi-data-section textarea {
+  font: 11px/1.6 var(--font-mono);
+  resize: vertical;
+}
+.fi-readiness {
+  color: #92afbf;
+  font-size: 11px;
+  line-height: 1.8;
+  padding-left: 16px;
+}
+.fi-readiness li {
+  margin: 12px 0;
+}
+.fi-readiness strong {
+  color: #c2d7e3;
+  font-weight: 500;
+}
+.fi-data-section .fi-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.fi-consent input {
+  margin-top: 2px;
+}
+.fi-limitations {
+  border-top: 1px solid #233947;
+  margin-top: 25px;
+  padding: 15px 0;
+  color: #8ca5b8;
+  font-size: 11px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.fi-limitations summary {
+  display: flex;
+  justify-content: space-between;
+  color: #b3d1db;
+}
+.fi-loading {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: #9bc6d5;
+}
+@media (max-width: 1200px) {
+  .fi-overview {
+    grid-template-columns: 1fr 2fr;
+  }
+  .fi-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fi-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 750px) {
+  .fi-module-grid,
+  .fi-data-section,
+  .fi-projection {
+    grid-template-columns: 1fr;
+  }
+  .fi-overview {
+    grid-template-columns: 1fr;
+  }
+  .fi-balance {
+    border-right: 0;
+    border-bottom: 1px solid #233b49;
+    padding: 22px;
+  }
+  .fi-balance-label {
+    margin-top: 16px;
+  }
+  .fi-balance > strong {
+    font-size: 36px;
+  }
+  .fi-overview-grid {
+    padding: 22px;
+  }
+  .fi-card {
+    padding: 20px;
+  }
+  .fi-data-section {
+    gap: 20px;
+  }
+  .fi-module-nav button {
+    font-size: 10px;
+    padding: 8px;
+  }
+  .fi-data-strip a {
+    margin-left: 0;
+  }
+  .fi-inline-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fi-actions .dt-button {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .finance-workspace *,
+  .finance-workspace *::before,
+  .finance-workspace *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
