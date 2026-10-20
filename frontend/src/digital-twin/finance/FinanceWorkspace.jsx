@@ -18,6 +18,7 @@ import {
 import { useTwinResource } from "../useTwinDashboard";
 import { amount, dateLabel, known, percent, sourceLabel } from "../format";
 import FinanceForecast from "./FinanceForecast";
+import WalletHistoryReview from "./WalletHistoryReview";
 import "./finance.css";
 
 const methods = {
@@ -118,6 +119,7 @@ export default function FinanceWorkspace({
   userId,
   token,
   walletRevision,
+  walletToken,
   onBack,
   onOpenProfile,
   onOpenSimulations,
@@ -138,6 +140,7 @@ export default function FinanceWorkspace({
     [consent, setConsent] = useState(false);
   const [payment, setPayment] = useState(""),
     [selected, setSelected] = useState("all");
+  const [walletReview, setWalletReview] = useState(null);
   const controller = useRef(),
     active = useRef(true),
     heading = useRef();
@@ -164,7 +167,8 @@ export default function FinanceWorkspace({
     setSource("");
     setConsent(false);
     setPayment("");
-  }, [userId, token]);
+    setWalletReview(null);
+  }, [userId, token, walletToken]);
   useEffect(() => {
     if (error?.unauthorized) {
       controller.current?.abort();
@@ -174,6 +178,7 @@ export default function FinanceWorkspace({
       setSource("");
       setConsent(false);
       setPayment("");
+      setWalletReview(null);
       setBusy(false);
     }
   }, [error?.unauthorized]);
@@ -221,9 +226,16 @@ export default function FinanceWorkspace({
       }
       const result = await response.json();
       if (!active.current || controller.current !== abort) return;
-      if (path === "decisions/history") {
+      if (path === "twin/finance/wallet-history") {
+        setWalletReview(result);
+        setCsv(result.csv_text);
+        setSource(result.source_name);
+        setCurrency(result.currency);
+        setConsent(false);
+      } else if (path === "decisions/history") {
         setCsv("");
         setConsent(false);
+        setWalletReview(null);
         await refresh();
       } else setScenario(result);
     } catch (error) {
@@ -430,6 +442,13 @@ export default function FinanceWorkspace({
                   </strong>
                 </div>
                 <p className="fi-muted">{risk.reason}</p>
+                {known(risk.available_months) && (
+                  <p className="fi-muted">
+                    Eligible history: {risk.available_months} / 24 required
+                    months. Wallet history must first be reviewed and imported
+                    below.
+                  </p>
+                )}
                 <p className="fi-muted">
                   Target: expenses exceed income. This does not predict loan
                   default, creditworthiness or overall financial wellbeing.
@@ -796,6 +815,17 @@ export default function FinanceWorkspace({
               {latest?.history?.issue && (
                 <p className="fi-callout">{latest.history.issue}</p>
               )}
+              <WalletHistoryReview
+                connected={Boolean(walletToken)}
+                busy={busy}
+                review={walletReview}
+                onConnect={onOpenProfile}
+                onLoad={() =>
+                  post("twin/finance/wallet-history", {
+                    wallet_token: walletToken,
+                  })
+                }
+              />
             </div>
             <form
               onSubmit={(event) => {

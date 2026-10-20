@@ -36,6 +36,7 @@ export default function DigitalTwinPage({
   token,
   name,
   walletRevision,
+  walletToken,
   onOpenProfile,
   onOpenSimulations,
   onSignIn,
@@ -77,6 +78,7 @@ export default function DigitalTwinPage({
           userId={userId}
           token={token}
           walletRevision={walletRevision}
+          walletToken={walletToken}
           onBack={() => {
             setInsideFinance(false);
             setView("all");

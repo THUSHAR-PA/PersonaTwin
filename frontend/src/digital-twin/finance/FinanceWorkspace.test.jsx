@@ -127,6 +127,52 @@ const loaded = async () => {
 };
 
 describe("Financial workspace", () => {
+  it("reviews Wallet totals before importing them and never treats preview as a saved scenario", async () => {
+    render(<FinanceWorkspace {...props()} walletToken="synthetic-wallet" />);
+    await loaded();
+    fetcher.mockImplementation(async (path, options) => {
+      if (String(path).endsWith("/wallet-history")) {
+        expect(JSON.parse(options.body)).toEqual({
+          wallet_token: "synthetic-wallet",
+        });
+        return response({
+          currency: "INR",
+          returned_months: 24,
+          usable_months: 1,
+          excluded_months: [],
+          rows: [
+            {
+              month: "2026-09",
+              income: 50000,
+              expense: 40000,
+              has_activity: true,
+            },
+          ],
+          csv_text: "month,income,expense\n2026-09,50000,40000",
+          source_name: "Reviewed Persona Wallet totals",
+          note: "Confirm completeness.",
+        });
+      }
+      return response(payload);
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Wallet monthly history" }),
+    );
+    await screen.findByText(/Wallet returned 24 completed months/);
+    expect(screen.getByLabelText("Monthly history CSV").value).toContain(
+      "2026-09,50000,40000",
+    );
+    expect(screen.getByLabelText("History source").value).toBe(
+      "Reviewed Persona Wallet totals",
+    );
+    expect(screen.getByRole("checkbox").checked).toBe(false);
+    expect(
+      fetcher.mock.calls.some(([path]) =>
+        String(path).endsWith("decisions/history"),
+      ),
+    ).toBe(false);
+    expect(screen.getByText("₹24,000", { exact: true })).toBeTruthy();
+  });
   it("enters the full finance workspace from the Twin Finance control and returns", async () => {
     render(<DigitalTwinPage {...props()} name="Synthetic" />);
     await screen.findByText("Profile data loaded", { exact: true });

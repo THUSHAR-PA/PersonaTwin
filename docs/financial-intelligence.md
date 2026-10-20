@@ -9,6 +9,40 @@ the **Financial twin** panel. Both enter the full workspace rather than highligh
 the avatar panel or opening the old finance dialog. **Back to Digital Twin** returns
 to the hologram. Other Twin domains retain their existing behavior.
 
+### Using Persona Wallet history
+
+Wallet balances and model training history are separate. The initial finance
+implementation read displayed balances/categories from Wallet, but required a
+confirmed monthly import for training. A normal Wallet sync alone did not activate
+the risk model, even if the Wallet account had substantial transaction history.
+
+Connect Wallet through **Profile & Wallet**, then in Finance's **Manage training
+data** section click **Review Wallet monthly history**. PersonaTwin requests
+`months=24` with `end_date` fixed to the previous calendar month's final day. This
+avoids the Wallet API's default six-month window and excludes the partial current
+month. The response reports returned months, eligible consecutive months, excluded
+no-activity months and reviewable income/expense totals. It fills the import form;
+review the totals, confirm coverage/permission and click **Import & evaluate models**.
+Only that confirmation saves the history. Your balances and saved scenarios are
+not changed by the preview.
+
+The Wallet may generate zero buckets for months with no recorded transactions.
+Those are not silently treated as complete observations: the preview offers only
+the most recent uninterrupted suffix with recorded activity. If a no-activity
+month genuinely represents complete records with zero totals, enter its verified
+totals manually. Recorded activity alone also does not prove full coverage; the
+review/confirmation step remains necessary. The risk card now shows the eligible
+month count and exact initial-training-fold class counts when it cannot train.
+Twenty-four months is a minimum, not an accuracy guarantee: one-class histories
+and candidates that fail chronological validation still do not publish a risk
+probability. I have not inspected any private Wallet account through GitHub.
+
+`POST /users/{id}/twin/finance/wallet-history` is an owned, read-only preview. It
+forwards the connected Wallet token without storing it and returns only monthly
+totals/readiness, never transactions or account identifiers. Wallet session expiry
+returns a reconnect message (409), without expiring the PersonaTwin session. A
+failed preview preserves the existing saved history and financial profile.
+
 The overview shows saved income, expenses, cash, investments, debt, calculated
 surplus, savings rate, recorded net assets and cash runway. Recorded net assets
 means cash + investments − debt, not a complete valuation of all assets. Source,
@@ -142,6 +176,13 @@ Method references:
   in this environment, where earlier Chromium launch was blocked by the runtime's
   local-socket restriction. No live-user model quality or new remote CI is claimed.
 - Changes are prepared on the feature branch for review; not merged or deployed.
+
+The initial finance branch commit `cc27680` subsequently passed GitHub Actions,
+including desktop/mobile browser journeys. The Wallet-history bridge follow-up
+adds backend contract/privacy/coverage tests and a component test of review before
+import. The follow-up passed 111 backend tests, 18 frontend component/geometry
+tests, and both production builds. It has not been
+tested against a real user's private Wallet records.
 
 Run `pytest tests -q`, `npm test`, `npm run build` and, with API/Chromium available,
 `npm run test:e2e -- tests/digital-twin.spec.js`. See the model data requirements

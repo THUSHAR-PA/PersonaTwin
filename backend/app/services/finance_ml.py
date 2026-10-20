@@ -8,7 +8,7 @@ from functools import lru_cache
 
 from app.services.forecast_service import forecast_expenses
 
-VERSION = "financial-intelligence-v1"
+VERSION = "financial-intelligence-v1.1"
 
 
 def checked_history(rows, today):
@@ -94,8 +94,12 @@ def shortfall_model(history):
         "required_months": 24,
         "reason": "Needs 24 recent complete months and both surplus and deficit examples.",
         "evaluation": None,
+        "available_months": len(history),
     }
     if len(history) < 24:
+        result["reason"] = (
+            f"Only {len(history)} eligible completed months are available. This classifier requires at least 24, including surplus and deficit outcomes. Wallet summary totals alone do not train it."
+        )
         return result
     import numpy as np
     from sklearn.linear_model import LogisticRegression
@@ -111,9 +115,13 @@ def shortfall_model(history):
     x = np.array([_features(history[: i - 1]) for i in range(4, len(history))])
     y = np.array([int(row["expense"] > row["income"]) for row in history[4:]])
     split = len(y) - 6
-    if len(set(y[:split])) < 2 or min(np.bincount(y[:split], minlength=2)) < 3:
+    counts = np.bincount(y[: split - 1], minlength=2)
+    result["training_surplus_months"], result["training_deficit_months"] = int(
+        counts[0]
+    ), int(counts[1])
+    if min(counts) < 3:
         result["reason"] = (
-            "Training history needs at least three surplus and three deficit outcomes. A single class cannot train this classifier."
+            f"The first training fold contains {counts[0]} surplus and {counts[1]} deficit outcomes. At least three of each are required; the remaining months are reserved for chronological validation and its gap."
         )
         return result
 

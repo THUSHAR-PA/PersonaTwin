@@ -520,6 +520,22 @@
   font-size: 12px;
   color: #9bc6d5;
 }
+.fi-wallet-history {
+  border-top: 1px solid #284151;
+  margin-top: 24px;
+  padding-top: 14px;
+  font-size: 11px;
+  color: #9fb7c7;
+}
+.fi-wallet-history h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.fi-wallet-history summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
 @media (max-width: 1200px) {
   .fi-overview {
     grid-template-columns: 1fr 2fr;

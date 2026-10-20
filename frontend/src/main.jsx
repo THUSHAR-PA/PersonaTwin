@@ -697,7 +697,7 @@ function App() {
         {currentView === 'chat' && <ChatWorkspace key={user.id} userId={user.id} token={token}
           onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }} />}
 
-        {currentView === 'digital-twin' && <Suspense fallback={<p role="status">Loading Digital Twin…</p>}><DigitalTwinPage key={user.id} userId={user.id} token={token} name={user.full_name} walletRevision={walletSyncedAt}
+        {currentView === 'digital-twin' && <Suspense fallback={<p role="status">Loading Digital Twin…</p>}><DigitalTwinPage key={user.id} userId={user.id} token={token} name={user.full_name} walletRevision={walletSyncedAt} walletToken={walletToken}
           onOpenProfile={domain => { setActiveProfileTab(domain); setEditingProfile(false); setCurrentView("profiles"); }}
           onOpenSimulations={runId => { setDigitalTwinRunId(runId || null); setCurrentView("simulations"); }}
           onSignIn={signOut} /></Suspense>}

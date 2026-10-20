@@ -2,6 +2,13 @@
 
 ## Financial Twin intelligence — October 20, 2026
 
+Follow-up: Wallet-history review now requests 24 completed months directly from the
+connected Wallet API, explains usable coverage, and fills the confirmed-history
+import without manual retyping. Summary sync alone previously did not supply model
+training observations. Preview does not write profiles/history or retain Wallet
+credentials; user-confirmed import is still required. Missing/zero-filled months
+are not assumed complete, and one-class or weak models remain blocked.
+
 Branch `feature/financial-twin-intelligence` adds a full Finance drill-down
 from the Digital Twin page. It includes the financial overview, cash-flow risk
 classification, income/expense forecasting, conditional debt stress, goal
