@@ -157,7 +157,6 @@ describe("Digital Twin data and interactions", () => {
       "Bearer synthetic-test-token",
     );
     for (const label of [
-      "Finance",
       "Career",
       "Skills",
       "Goals",

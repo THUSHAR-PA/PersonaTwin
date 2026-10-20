@@ -1,5 +1,27 @@
 # PersonaTwin — Current State
 
+## Financial Twin intelligence — October 20, 2026
+
+Follow-up: Wallet-history review now requests 24 completed months directly from the
+connected Wallet API, explains usable coverage, and fills the confirmed-history
+import without manual retyping. Summary sync alone previously did not supply model
+training observations. Preview does not write profiles/history or retain Wallet
+credentials; user-confirmed import is still required. Missing/zero-filled months
+are not assumed complete, and one-class or weak models remain blocked.
+
+Branch `feature/financial-twin-intelligence` adds a full Finance drill-down
+from the Digital Twin page. It includes the financial overview, cash-flow risk
+classification, income/expense forecasting, conditional debt stress, goal
+projections, spending novelty detection, source-labeled Wallet categories and
+confirmed monthly history import. Models use per-user data and disclose validation
+and fallback states. Debt default and goal-success classifiers remain unsupported
+without labeled outcomes. See [financial-intelligence.md](docs/financial-intelligence.md).
+
+Verification: 103 backend tests, 17 frontend component/geometry tests and the
+production build passed. New browser/visual verification is pending. These new
+changes are prepared for feature-branch review and are not merged or deployed. The Digital Twin base
+feature below was merged into main through PR #3 (`a4f8f21`).
+
 ## Digital Twin dashboard — October 12, 2026
 
 The `feature/digital-twin-dashboard` branch adds an interactive Three.js /

@@ -156,14 +156,7 @@ test("real profiles, saved decision explanations, live refresh and existing navi
     fullPage: true,
   });
 
-  for (const view of [
-    "Finance",
-    "Career",
-    "Skills",
-    "Goals",
-    "Health",
-    "All systems",
-  ]) {
+  for (const view of ["Career", "Skills", "Goals", "Health", "All systems"]) {
     const button = page
       .getByRole("group", { name: "Twin views" })
       .getByRole("button", { name: view, exact: true });
@@ -171,12 +164,25 @@ test("real profiles, saved decision explanations, live refresh and existing navi
     await expect(button).toHaveAttribute("aria-pressed", "true");
   }
   await finance.click();
+  await expect(
+    page.getByRole("heading", { name: /Your financial twin/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Financial Risk Prediction",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Income Forecasting", exact: true }),
+  ).toBeVisible();
+  await fits(page);
+  await page.screenshot({
+    path: testInfo.outputPath("financial-workspace.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Back to Digital Twin" }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog).toContainText("Financial risk classification");
-  await expect(dialog).toContainText("A financial risk model is not connected");
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
-  await expect(finance).toBeFocused();
 
   await request.put(`${twinAccount.url}/financial/`, {
     headers: twinAccount.headers,
@@ -231,6 +237,86 @@ test("real profiles, saved decision explanations, live refresh and existing navi
     }
   }
   expect(errors).toEqual([]);
+});
+
+test("finance drill-down imports confirmed history, evaluates models and keeps scenarios read-only", async ({
+  page,
+  request,
+  twinAccount,
+}, testInfo) => {
+  await seed(request, twinAccount);
+  await openTwin(page, twinAccount);
+  await page.getByRole("button", { name: "Finance", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: /Your financial twin/ }),
+  ).toBeVisible();
+  const now = new Date();
+  const monthIndex = now.getUTCFullYear() * 12 + now.getUTCMonth();
+  const rows = Array.from({ length: 60 }, (_, i) => {
+    const index = monthIndex - 60 + i;
+    const month = `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+    return `${month},50000,${(50000 + 15000 * Math.sin(i * 0.45)).toFixed(2)}`;
+  });
+  await page
+    .getByLabel("History source", { exact: true })
+    .fill("Synthetic browser-test totals");
+  await page
+    .getByLabel("Monthly history CSV", { exact: true })
+    .fill(`month,income,expense\n${rows.join("\n")}`);
+  await page.getByRole("checkbox").check();
+  await page
+    .getByRole("button", { name: "Import & evaluate models", exact: true })
+    .click();
+  await expect(
+    page.getByText("60 complete history months", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Logistic regression", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Isolation Forest · unsupervised", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("spinbutton", { name: "Monthly debt payment", exact: true })
+    .fill("5000");
+  await page
+    .getByRole("button", { name: "Calculate scenario", exact: true })
+    .click();
+  await expect(page.getByText("12.5%", { exact: true })).toBeVisible();
+  const profile = await (
+    await request.get(`${twinAccount.url}/financial/`, {
+      headers: twinAccount.headers,
+    })
+  ).json();
+  expect(profile.monthly_expense).toBe(40000);
+  expect(profile.debts).toBe(0);
+  const nav = page.getByRole("navigation", {
+    name: "Financial analysis modules",
+  });
+  for (const name of [
+    "Financial Risk Prediction",
+    "Expense Forecasting",
+    "Income Forecasting",
+    "Debt Stress Prediction",
+    "Financial Goal Prediction",
+    "Spending Behaviour Analysis",
+  ]) {
+    await nav.getByRole("button", { name, exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name, exact: true }),
+    ).toBeVisible();
+  }
+  await nav.getByRole("button", { name: "All insights", exact: true }).click();
+  if (testInfo.project.name === "desktop") {
+    for (const width of [320, 768, 1440]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await fits(page);
+      await page.screenshot({
+        path: testInfo.outputPath(`finance-${width}.png`),
+        fullPage: true,
+      });
+    }
+  } else await fits(page);
 });
 
 test("actual WebGL render, mouse rotation, keyboard zoom and reduced motion", async ({

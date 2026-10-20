@@ -44,7 +44,7 @@ function Panel({ id, index, title, Icon, children, active, onOpen, footer }) {
       type="button"
       className={`dt-holo-panel dt-panel-${id}${active ? " is-focused" : ""}`}
       aria-label={`Open ${title}`}
-      aria-haspopup="dialog"
+      aria-haspopup={id === "financial" ? undefined : "dialog"}
       onClick={() => onOpen(id)}
     >
       <span className="dt-panel-heading">

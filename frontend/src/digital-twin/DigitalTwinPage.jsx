@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { lazy, Suspense, useState } from "react";
 import {
   Activity,
   ArrowUpRight,
@@ -20,6 +20,8 @@ import { useDecisionDetail, useTwinDashboard } from "./useTwinDashboard";
 import { amount, dateLabel, known } from "./format";
 import "./digital-twin.css";
 
+const FinanceWorkspace = lazy(() => import("./finance/FinanceWorkspace"));
+
 const views = [
   ["all", "All systems", Orbit, "#4ce1ff"],
   ["financial", "Finance", Wallet, "#45efda"],
@@ -34,6 +36,7 @@ export default function DigitalTwinPage({
   token,
   name,
   walletRevision,
+  walletToken,
   onOpenProfile,
   onOpenSimulations,
   onSignIn,
@@ -45,6 +48,7 @@ export default function DigitalTwinPage({
   );
   const [view, setView] = useState("all"),
     [expanded, setExpanded] = useState(null);
+  const [insideFinance, setInsideFinance] = useState(false);
   const [selectedId, setSelectedId] = useState(""),
     [branch, setBranch] = useState("baseline");
   const decision =
@@ -60,9 +64,31 @@ export default function DigitalTwinPage({
       branch === "baseline" ? "baseline_savings" : "alternative_savings"
     ];
   const open = (module) => {
+    if (module === "financial") {
+      setInsideFinance(true);
+      return;
+    }
     setExpanded(module);
     if (module !== "decisions") setView(module);
   };
+  if (insideFinance)
+    return (
+      <Suspense fallback={<p role="status">Opening your financial twin…</p>}>
+        <FinanceWorkspace
+          userId={userId}
+          token={token}
+          walletRevision={walletRevision}
+          walletToken={walletToken}
+          onBack={() => {
+            setInsideFinance(false);
+            setView("all");
+          }}
+          onOpenProfile={() => onOpenProfile("financial")}
+          onOpenSimulations={onOpenSimulations}
+          onSignIn={onSignIn}
+        />
+      </Suspense>
+    );
   return (
     <div className="digital-twin">
       <header className="dt-header">
@@ -130,7 +156,9 @@ export default function DigitalTwinPage({
               key={id}
               className={view === id ? "active" : ""}
               aria-pressed={view === id}
-              onClick={() => setView(id)}
+              onClick={() =>
+                id === "financial" ? setInsideFinance(true) : setView(id)
+              }
             >
               <Icon size={14} />
               {label}
