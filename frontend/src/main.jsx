@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Activity, Banknote, BriefcaseBusiness, Check, CircleAlert,
@@ -9,6 +9,8 @@ import { TwinMark, IconOverview, IconProfiles, IconSimulations } from "./icons";
 import "./styles.css";
 import DecisionWorkspace from "./DecisionWorkspace";
 import ChatWorkspace from "./ChatWorkspace";
+
+const DigitalTwinPage = lazy(() => import("./digital-twin/DigitalTwinPage"));
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -175,6 +177,7 @@ function App() {
   const [userForm, setUserForm] = useState(emptyUser);
 
   const [currentView, setCurrentView] = useState("chat");
+  const [digitalTwinRunId, setDigitalTwinRunId] = useState(null);
   const [activeProfileTab, setActiveProfileTab] = useState("identity");
   const [editingProfile, setEditingProfile] = useState(false);
   const [twinData, setTwinData] = useState(null);
@@ -618,7 +621,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell${currentView === "digital-twin" ? " twin-mode" : ""}`}>
       <aside className="sidebar">
         <div className="brand-lockup">
           <TwinMark size={20} strokeWidth={1.8} />
@@ -632,10 +635,13 @@ function App() {
           <button aria-current={currentView === 'overview' ? 'page' : undefined} className={currentView === 'overview' ? 'active' : ''} onClick={() => setCurrentView('overview')}>
             <IconOverview size={16} strokeWidth={2} /> Overview
           </button>
+          <button aria-current={currentView === 'digital-twin' ? 'page' : undefined} className={currentView === 'digital-twin' ? 'active' : ''} onClick={() => setCurrentView('digital-twin')}>
+            <TwinMark size={16} strokeWidth={1.8} /> Digital Twin
+          </button>
           <button aria-current={currentView === 'profiles' ? 'page' : undefined} className={currentView === 'profiles' ? 'active' : ''} onClick={() => setCurrentView('profiles')}>
             <IconProfiles size={16} strokeWidth={2} /> Profiles
           </button>
-          <button aria-current={currentView === 'simulations' ? 'page' : undefined} className={currentView === 'simulations' ? 'active' : ''} onClick={() => setCurrentView('simulations')}>
+          <button aria-current={currentView === 'simulations' ? 'page' : undefined} className={currentView === 'simulations' ? 'active' : ''} onClick={() => { setDigitalTwinRunId(null); setCurrentView('simulations'); }}>
             <IconSimulations size={16} strokeWidth={2} /> Simulations
           </button>
         </nav>
@@ -647,7 +653,7 @@ function App() {
       </aside>
 
       <section className="workspace">
-        <header className="topbar">
+        {currentView !== 'digital-twin' && <header className="topbar">
           <div>
             <span className="eyebrow">Digital Twin Dashboard</span>
             <h1>{user.full_name}</h1>
@@ -655,7 +661,7 @@ function App() {
           <button className="tool-action" type="button" onClick={refreshDashboard} disabled={loading} aria-label="Refresh Data" title="Refresh data">
             <RefreshCw size={14} strokeWidth={2} />
           </button>
-        </header>
+        </header>}
 
         <StatusMessage status={status} />
         {walletModalOpen && (
@@ -691,7 +697,12 @@ function App() {
         {currentView === 'chat' && <ChatWorkspace key={user.id} userId={user.id} token={token}
           onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }} />}
 
-        {currentView === 'simulations' && <DecisionWorkspace key={user.id} userId={user.id} token={token}
+        {currentView === 'digital-twin' && <Suspense fallback={<p role="status">Loading Digital Twin…</p>}><DigitalTwinPage key={user.id} userId={user.id} token={token} name={user.full_name} walletRevision={walletSyncedAt}
+          onOpenProfile={domain => { setActiveProfileTab(domain); setEditingProfile(false); setCurrentView("profiles"); }}
+          onOpenSimulations={runId => { setDigitalTwinRunId(runId || null); setCurrentView("simulations"); }}
+          onSignIn={signOut} /></Suspense>}
+
+        {currentView === 'simulations' && <DecisionWorkspace key={`${user.id}-${digitalTwinRunId || "new"}`} userId={user.id} token={token} initialRunId={digitalTwinRunId}
           onOpenFinancialProfile={() => { setActiveProfileTab("financial"); setEditingProfile(false); setCurrentView("profiles"); }}
           calculators={
           <div className="view-fade-in simulation-layout">
