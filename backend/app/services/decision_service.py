@@ -43,6 +43,21 @@ def evaluate_decision(state: dict, request: DecisionRequest, as_of: date | None 
 
     baseline = project(baseline_income, expenses, cash)
     alternative = project(alternative_income, alternative_expense, cash - upfront)
+    # Bounds describe expense sensitivity of the proposed alternative, not probabilities.
+    spread = request.case_expense_variation_pct / 100
+    worst = project(alternative_income, [max(0, e * (1 + spread) - request.monthly_reduction) + (request.monthly_lifestyle_cost if lifestyle else 0) for e in expenses], cash - upfront)
+    best = project(alternative_income, [max(0, e * (1 - spread) - request.monthly_reduction) + (request.monthly_lifestyle_cost if lifestyle else 0) for e in expenses], cash - upfront)
+    cases = []
+    for key, label, values, initial, assumption in [
+        ("current", "Current case", baseline, cash, "Keep current income and spending plan; no proposed change."),
+        ("worst", "Worst case", worst, cash - upfront, f"Proposed alternative with forecast expenses {request.case_expense_variation_pct:g}% higher, before spending cuts; income unchanged."),
+        ("best", "Best case", best, cash - upfront, f"Proposed alternative with forecast expenses {request.case_expense_variation_pct:g}% lower, before spending cuts; income unchanged."),
+        ("alternative", "Alternative option", alternative, cash - upfront, "Apply your entered spending, career or lifestyle change at forecast expenses."),
+    ]:
+        cases.append({"id": key, "label": label, "assumption": assumption,
+                      "final_savings": round(values[-1], 2), "minimum_cash": round(min([initial] + values), 2),
+                      "goal_met": values[-1] >= request.target_amount,
+                      "trajectory": [round(v, 2) for v in values]})
     uncertainty = None
     if request.uncertainty_pct:
         try:
@@ -114,7 +129,7 @@ def evaluate_decision(state: dict, request: DecisionRequest, as_of: date | None 
         recommendations.append({"action": f"Evaluate a monthly reduction of {counterfactual['monthly_reduction']:,.2f}.", "reason": "Recalculation reaches the target from the baseline; feasibility against essential expenses still needs your review."})
 
     return {
-        "engine_version": "cash-flow-v1", "as_of": as_of.isoformat(), "currency": state["currency"],
+        "engine_version": "cash-flow-v2", "cases": cases, "as_of": as_of.isoformat(), "currency": state["currency"],
         "period_convention": "full_calendar_months_starting_next_month", "target_amount": request.target_amount,
         "baseline": {"final_savings": round(baseline[-1], 2), "goal_met": baseline[-1] >= request.target_amount},
         "alternative": {"final_savings": round(alternative[-1], 2), "goal_met": alternative[-1] >= request.target_amount},

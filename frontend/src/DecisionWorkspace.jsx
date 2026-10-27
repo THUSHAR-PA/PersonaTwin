@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Download, GitCompareArrows, History, Play, RefreshCw, Trash2, Upload } from "lucide-react";
 import "./decisions.css";
+import ScenarioCases from "./ScenarioCases";
 import DecisionOutcomes from "./DecisionOutcomes";
 
 const labels = { savings_goal: "Savings goal", job_switch: "Job switch", higher_studies: "Higher studies", lifestyle: "Lifestyle budget" };
-const initial = { title: "Savings goal", scenario: "savings_goal", months: 12, target_amount: 100000, monthly_reduction: 0, forecast: "auto", uncertainty_pct: 0, target_monthly_income: 50000, transition_cost: 0, gap_months: 0, monthly_lifestyle_cost: 0, weekly_activity_hours: 0, seed: 42, samples: 1000 };
+const initial = { title: "Savings goal", scenario: "savings_goal", months: 12, target_amount: 100000, monthly_reduction: 0, forecast: "auto", uncertainty_pct: 0, case_expense_variation_pct: 20, target_monthly_income: 50000, transition_cost: 0, gap_months: 0, monthly_lifestyle_cost: 0, weekly_activity_hours: 0, seed: 42, samples: 1000 };
 const money = (value, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(value);
 const stamp = (value) => new Date(value).toLocaleString();
 
@@ -101,7 +102,7 @@ export default function DecisionWorkspace({ userId, token, calculators, onOpenFi
     event.preventDefault(); perform(async () => {
       const state = stateId ? states.find(s => s.id === stateId) : await api("/states", "POST", { currency });
       const payload = { state_id: state.id, title: form.title, scenario: form.scenario, forecast: form.forecast };
-      for (const key of ["months", "target_amount", "monthly_reduction", "uncertainty_pct", "seed", "samples"]) payload[key] = Number(form[key]);
+      for (const key of ["months", "target_amount", "monthly_reduction", "case_expense_variation_pct", "uncertainty_pct", "seed", "samples"]) payload[key] = Number(form[key]);
       if (["job_switch", "higher_studies"].includes(form.scenario)) for (const key of ["target_monthly_income", "transition_cost", "gap_months"]) payload[key] = Number(form[key]);
       if (form.scenario === "lifestyle") for (const key of ["monthly_lifestyle_cost", "weekly_activity_hours"]) payload[key] = Number(form[key]);
       setRun(await api("/", "POST", payload)); setConfirmDelete(false); await reload();
@@ -130,9 +131,9 @@ export default function DecisionWorkspace({ userId, token, calculators, onOpenFi
           <label>Simulation name<input required maxLength={120} value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} /></label>
           {number("months", "Projection months", 1, 120, 1)}{number("target_amount", "Savings target")}
         </div>
-        <h3>Changes to your plan</h3>
+        <h3>Changes to your plan</h3><p>Compare your current plan, a downside, an upside, and your proposed alternative.</p>
         <div className="decision-fields">
-          {number("monthly_reduction", "Monthly spending reduction")}
+          {number("monthly_reduction", "Monthly spending reduction")}{number("case_expense_variation_pct", "Best / worst expense variation (%)", 0, 50)}
           {["job_switch", "higher_studies"].includes(form.scenario) && <>{number("target_monthly_income", "New monthly take-home income")}{number("transition_cost", "One-time transition / tuition cost")}{number("gap_months", "Months without income", 0, 60, 1)}</>}
           {form.scenario === "lifestyle" && <>{number("monthly_lifestyle_cost", "Monthly activity budget")}{number("weekly_activity_hours", "Planned activity hours / week", 0, 40)}</>}
         </div>
@@ -148,7 +149,7 @@ export default function DecisionWorkspace({ userId, token, calculators, onOpenFi
         <div className="decision-heading"><div><h2>{run.title}</h2><small>{stamp(run.created_at)} | {result.currency} | {result.forecast.method.replaceAll("_", " ")}</small></div><button className="secondary-action compact" title="Export saved decision" aria-label="Export saved decision" onClick={() => { const url = URL.createObjectURL(new Blob([JSON.stringify(run, null, 2)], { type: "application/json" })); const a = document.createElement("a"); a.href = url; a.download = `decision-${run.id}.json`; a.click(); URL.revokeObjectURL(url); }}><Download size={16} /></button></div>
         <p className="simulation-result-context">{result.trajectory[0].period_end} to {result.trajectory.at(-1).period_end} | Savings target: {money(result.target_amount, result.currency)}</p>
         <div className="decision-totals">{[["Keep current plan", result.baseline.final_savings], ["With this change", result.alternative.final_savings], ["Savings difference", result.difference]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{money(value, result.currency)}</strong></div>)}</div>
-        <ProjectionChart result={result} />
+        <ScenarioCases cases={result.cases} currency={result.currency} /><ProjectionChart result={result} />
         {result.uncertainty && <p className="decision-message">Conditional goal attainment: baseline {(result.uncertainty.baseline.goal_probability * 100).toFixed(1)}%, alternative {(result.uncertainty.alternative.goal_probability * 100).toFixed(1)}%.</p>}
         <div className="decision-explanation"><h3>What changes the outcome</h3><div className="decision-table-wrap"><table><thead><tr><th>Factor</th><th>Cash difference</th></tr></thead><tbody>{result.contributions.map(c => <tr key={c.factor}><td>{c.factor}</td><td>{money(c.amount, result.currency)}</td></tr>)}</tbody></table></div>
           <h3>Monthly saving needed</h3><p>{result.counterfactual.feasible ? `Reducing monthly spending by ${money(result.counterfactual.monthly_reduction, result.currency)} produces ${money(result.counterfactual.result, result.currency)} from the current plan.` : result.counterfactual.reason}</p><small>{result.counterfactual.reason}</small>

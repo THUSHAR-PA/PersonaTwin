@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
-    include: ["src/digital-twin/**/*.test.{js,jsx}"],
+    include: ["src/**/*.test.{js,jsx}"],
     restoreMocks: true,
   },
 });

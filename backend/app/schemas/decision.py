@@ -29,6 +29,7 @@ class DecisionRequest(StrictInput):
     target_amount: Amount
     monthly_reduction: Amount = 0
     forecast: Literal["profile", "auto"] = "auto"
+    case_expense_variation_pct: float = Field(default=20, ge=0, le=50)
     uncertainty_pct: float = Field(default=0, ge=0, le=50)
     seed: int = Field(default=42, ge=0, le=4294967295, strict=True)
     samples: int = Field(default=1000, ge=100, le=5000, strict=True)

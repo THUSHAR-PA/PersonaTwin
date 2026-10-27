@@ -229,6 +229,7 @@ def answer(state, plan, response_kind="compare", *, as_of=None):
     expenses = forecast["values"]
     reserve = reserve_months * max([expense] + expenses)
     options = []
+    option_inputs = {}
 
     def option(
         key,
@@ -243,6 +244,7 @@ def answer(state, plan, response_kind="compare", *, as_of=None):
     ):
         costs = costs if costs is not None else [0] * n
         incomes = incomes if incomes is not None else [income] * n
+        option_inputs[key] = (incomes, costs, upfront)
         points = project_cash(cash, incomes, expenses, costs, upfront)
         balance = points[-1]
         minimum = min(points)
@@ -464,6 +466,23 @@ def answer(state, plan, response_kind="compare", *, as_of=None):
         )
         if chosen.get("conditional"):
             text += "This option depends on securing an offer and start date without an unpaid gap; it is not a predicted job outcome. "
+    proposed_id = {"purchase": "cash", "savings": "reduction", "job_switch": "switch"}[scenario]
+    proposed = next(o for o in options if o["id"] == proposed_id)
+    case_income, case_costs, case_upfront = option_inputs[proposed_id]
+    cases = []
+    for key, label, multiplier in [("current", "Current case", 1), ("worst", "Worst case", 1.2), ("best", "Best case", 0.8), ("alternative", "Alternative option", 1)]:
+        if key == "current":
+            points = project_cash(cash, [income] * n, expenses, [0] * n, 0)
+            assumption = "Keep current income and spending; no proposed change."
+        else:
+            varied = [e * multiplier for e in expenses]
+            # A spending cut cannot exceed the expenses available to cut.
+            costs = [max(c, -e) for c, e in zip(case_costs, varied)]
+            points = project_cash(cash, case_income, varied, costs, case_upfront)
+            assumption = f"{proposed['label']}; forecast expenses {round(multiplier * 100)}% of baseline, income and other costs unchanged."
+        cases.append({"id": key, "label": label, "assumption": assumption,
+                      "final_savings": round(points[-1], 2), "minimum_cash": round(min(points), 2),
+                      "trajectory": [round(v, 2) for v in points[1:]]})
     for o in options:
         o["difference_from_baseline"] = round(
             o["final_cash"] - baseline["final_cash"], 2
@@ -512,7 +531,8 @@ def answer(state, plan, response_kind="compare", *, as_of=None):
         "plan": plan,
         "context": state,
         "comparison": {
-            "engine_version": "chat-cashflow-v1",
+            "engine_version": "chat-cashflow-v2",
+            "cases": cases,
             "as_of": today.isoformat(),
             "scenario": scenario,
             "currency": currency,

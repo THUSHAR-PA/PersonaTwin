@@ -130,3 +130,18 @@ New decisions show an empty state until a projection month is completed.
 
 These are self-reported savings deviations, not isolated expense-forecast errors
 or causal evidence. No automatic retraining or promotion follows from them.
+
+
+### Four-case comparison
+
+New saved runs and completed chat comparisons include current, worst, best and
+alternative cases with assumptions, monthly cash, final savings and minimum cash.
+Current keeps the saved plan. Alternative applies the entered change (chat: cash
+purchase, requested spending cut, or stated job switch). Worst/best rerun that
+alternative with forecast expenses 20% higher/lower, before spending cuts; cuts
+are capped at available expenses. Saved runs expose case_expense_variation_pct
+(0–50, default 20); chat uses a disclosed fixed 20%. Income and other costs stay
+fixed. These are expense sensitivity cases, not global bounds or probabilities.
+Recommendation ranking and outcome tracking retain their existing semantics.
+Older saved runs retain their original results; rerun to get four cases.
+Standalone calculators remain single-input calculators.

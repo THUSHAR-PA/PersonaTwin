@@ -1,3 +1,4 @@
+import ScenarioCases from "./ScenarioCases";
 import React, { useEffect, useRef, useState } from "react";
 import { ArrowUp, Check, ChevronRight, MessageSquare, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import "./chat.css";
@@ -82,7 +83,7 @@ function Comparison({ message }) {
   return <div className="chat-comparison">
     <div className="chat-result-title"><span className="chat-kicker">SIMULATION COMPARISON</span>
       <span>{options.length} paths · {result.months} months</span></div>
-    <Trajectory comparison={result} />
+    <ScenarioCases cases={result.cases} currency={currency} /><Trajectory comparison={result} />
     <div className="chat-table-wrap" role="region" aria-label="Scenario comparison" tabIndex={0}>
       <table className="chat-table" aria-label="Scenario results">
         <thead><tr><th>Option</th><th>Final cash</th><th>Lowest cash</th><th>New debt left</th><th>Buffer check</th></tr></thead>
