@@ -1,11 +1,11 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  Activity, Banknote, BriefcaseBusiness, Check, CircleAlert,
+  Banknote, BriefcaseBusiness, Check, CircleAlert,
   Github, HeartPulse, LogOut, Play, RefreshCw, Save, Sparkles, UserRound, ArrowRight,
   Minus, Pencil, Plus, Upload, X
 } from "lucide-react";
-import { TwinMark, IconOverview, IconProfiles, IconSimulations } from "./icons";
+import { TwinMark, IconProfiles, IconSimulations } from "./icons";
 import "./styles.css";
 import DecisionWorkspace from "./DecisionWorkspace";
 import ChatWorkspace from "./ChatWorkspace";
@@ -180,7 +180,6 @@ function App() {
   const [digitalTwinRunId, setDigitalTwinRunId] = useState(null);
   const [activeProfileTab, setActiveProfileTab] = useState("identity");
   const [editingProfile, setEditingProfile] = useState(false);
-  const [twinData, setTwinData] = useState(null);
 
   const [activeDomain, setActiveDomain] = useState("financial");
   const [scenario, setScenario] = useState(scenarioGroups.financial[0].value);
@@ -266,12 +265,6 @@ function App() {
       setProfiles(nextProfiles);
       setProfileExists(exists);
 
-      try {
-        const twin = await request(`/users/${currentUser.id}/twin/`, { headers });
-        setTwinData(twin);
-      } catch (error) {
-        setTwinData(null);
-      }
     } catch (error) {
       localStorage.removeItem("pt_token");
       setToken(null);
@@ -293,7 +286,6 @@ function App() {
       setUserForm(emptyUser);
       setProfiles(emptyProfiles);
       setProfileExists({ financial: false, career: false, health: false });
-      setTwinData(null);
       setSimulationResult(null);
       setWalletToken("");
       sessionStorage.removeItem("pt_wallet_token");
@@ -381,11 +373,7 @@ function App() {
     async function refreshBank() {
       if (cancelled || document.visibilityState === "hidden") return;
       try {
-        const synced = await syncWalletData(walletToken);
-        if (synced && !cancelled) {
-          const twin = await request(`/users/${user.id}/twin/`, { headers: authHeaders });
-          if (!cancelled) setTwinData(twin);
-        }
+        await syncWalletData(walletToken);
       } catch (error) {
         if (cancelled) return;
         if (error.status === 401) {
@@ -566,7 +554,6 @@ function App() {
     setUserForm(emptyUser);
     setProfiles(emptyProfiles);
     setProfileExists({ financial: false, career: false, health: false });
-    setTwinData(null);
     setSimulationResult(null);
     setWalletToken("");
     sessionStorage.removeItem("pt_wallet_token");
@@ -580,13 +567,6 @@ function App() {
     setEditingProfile(false);
     setStatus({ type: "idle", message: "" });
   }
-
-  const analytics = useMemo(() => calculateAnalytics(userForm, profiles, profileExists), [userForm, profiles, profileExists]);
-  const twinSummary = twinData ? {
-    career: `${Math.round(twinData.career_score)}%`,
-    finance: `${Math.round(twinData.finance_score)}%`,
-    learning: `${Math.round(twinData.learning_score)}%`,
-  } : null;
 
   if (!token || !user) {
     return (
@@ -631,9 +611,6 @@ function App() {
         <nav className="sidebar-nav" aria-label="Main navigation">
           <button aria-current={currentView === 'chat' ? 'page' : undefined} className={currentView === 'chat' ? 'active' : ''} onClick={() => setCurrentView('chat')}>
             <Sparkles size={16} strokeWidth={2} /> Chat
-          </button>
-          <button aria-current={currentView === 'overview' ? 'page' : undefined} className={currentView === 'overview' ? 'active' : ''} onClick={() => setCurrentView('overview')}>
-            <IconOverview size={16} strokeWidth={2} /> Overview
           </button>
           <button aria-current={currentView === 'digital-twin' ? 'page' : undefined} className={currentView === 'digital-twin' ? 'active' : ''} onClick={() => setCurrentView('digital-twin')}>
             <TwinMark size={16} strokeWidth={1.8} /> Digital Twin
@@ -733,43 +710,6 @@ function App() {
             <SimulationResult result={simulationResult} />
           </div>
           } />}
-
-        {currentView === 'overview' && (
-          <div className="view-fade-in">
-            <section className="analytics-grid">
-              <MetricCard icon={<Banknote size={20} strokeWidth={1.5} />} label="Savings runway" value={analytics.runway} helper="Months covered" />
-              <MetricCard icon={<BriefcaseBusiness size={20} strokeWidth={1.5} />} label="Career readiness" value={twinSummary ? twinSummary.career : analytics.careerReadiness} helper="Twin score" />
-              <MetricCard icon={<HeartPulse size={20} strokeWidth={1.5} />} label="Health index" value={twinSummary ? twinSummary.learning : analytics.healthIndex} helper="Learning + health" />
-              <MetricCard icon={<Activity size={20} strokeWidth={1.5} />} label="Twin completeness" value={analytics.completeness} helper="Profiles saved" />
-            </section>
-
-            <div className="panel twin-summary-panel">
-              <div className="panel-title">
-                <div>
-                  <TwinMark size={20} strokeWidth={1.6} />
-                  <h2>Digital Twin Summary</h2>
-                </div>
-              </div>
-              <div className="twin-summary-grid">
-                <div className="score-box">
-                  <span>Career</span>
-                  <strong>{twinSummary ? twinSummary.career : "—"}</strong>
-                </div>
-                <div className="score-box">
-                  <span>Finance</span>
-                  <strong>{twinSummary ? twinSummary.finance : "—"}</strong>
-                </div>
-                <div className="score-box">
-                  <span>Learning</span>
-                  <strong>{twinSummary ? twinSummary.learning : "—"}</strong>
-                </div>
-              </div>
-              <p className="twin-summary-text">
-                {twinData?.prediction?.summary || "Complete your profile to unlock a richer personal twin forecast."}
-              </p>
-            </div>
-          </div>
-        )}
 
         {currentView === 'profiles' && (
           <div className="view-fade-in">
@@ -1009,7 +949,6 @@ function ProfileDetails({ icon, title: panelTitle, exists, values, onEdit, syncL
   );
 }
 function Field({ label, value, onChange, type = "text" }) { return ( <label> {label} <input type={type} step={type === "number" ? "any" : undefined} value={value} onChange={(event) => onChange(event.target.value)} /> </label> ); }
-function MetricCard({ icon, label, value, helper }) { return ( <article className="metric-card"> <div className="metric-icon">{icon}</div> <div> <span>{label}</span> <strong>{value}</strong> <small>{helper}</small> </div> </article> ); }
 function PanelTitle({ icon, title: panelTitle, badge, action }) { return ( <div className="panel-title"> <div> {icon} <h2>{panelTitle}</h2> </div> <div style={{ display: "flex", alignItems: "center", gap: 10 }}> {badge && <span className="badge">{badge}</span>} {action} </div> </div> ); }
 function SimulationResult({ result }) { if (!result) { return ( <div className="panel result-panel empty-result"> <CircleAlert size={32} strokeWidth={1.5} /> <h2>Awaiting Simulation</h2> <p>Choose a domain on the left, tune the assumptions, and run a scenario to see your Twin's projection.</p> </div> ); } return ( <div className="panel result-panel"> <div className="score-ring" style={{ "--score": result.score }}> <span>{Math.round(result.score)}</span> </div> <div className="result-heading"> <span className={`risk ${result.risk_level.toLowerCase()}`}> {result.risk_level} risk </span> <h2>{result.simulation_name}</h2> <p>{result.summary}</p> </div> <div className="metrics-list"> {Object.entries(result.metrics || {}).map(([key, value]) => ( <div key={key}> <span>{readable(key)}</span> <strong>{formatValue(value)}</strong> </div> ))} </div> <div className="recommendations"> <h3>Actionable Next Steps</h3> {result.recommendations.map((item) => ( <p key={item}> <Check size={16} /> {item} </p> ))} </div> </div> ); }
 function StatusMessage({ status }) { if (!status.message) return null; return <div className={`status ${status.type}`}>{status.message}</div>; }
@@ -1019,7 +958,6 @@ function cleanPayload(form, numericKeys = []) { const payload = {}; for (const [
 function buildProfilePayload(domain, form) { if (domain === "career") { return { current_role: form.current_role, years_of_experience: Number(form.years_of_experience), expected_salary: Number(form.expected_salary), dream_role: form.dream_role, skills: splitList(form.skills), certifications: splitList(form.certifications), }; } const numericKeys = Object.keys(emptyProfiles[domain]); return cleanPayload(form, numericKeys); }
 function profileToForm(domain, profile) { const form = nullableToInput(profile); if (domain === "career") { form.skills = Array.isArray(profile.skills) ? profile.skills.join(", ") : ""; form.certifications = Array.isArray(profile.certifications) ? profile.certifications.join(", ") : ""; } return form; }
 function splitList(value) { return String(value || "") .split(",") .map((item) => item.trim()) .filter(Boolean); }
-function calculateAnalytics(userForm, profiles, profileExists) { const income = Number(profiles.financial.monthly_income) || 0; const expense = Number(profiles.financial.monthly_expense) || 0; const savings = Number(profiles.financial.current_savings) || 0; const runwayValue = expense > 0 ? savings / expense : 0; const runway = runwayValue > 0 ? `${runwayValue.toFixed(1)} mo` : "0 mo"; const skills = splitList(profiles.career.skills).length; const certs = splitList(profiles.career.certifications).length; const years = Number(profiles.career.years_of_experience) || 0; const careerScore = profileExists.career ? Math.min(100, Math.round(years * 8 + skills * 8 + certs * 6)) : 0; const sleep = Number(profiles.health.sleep_hours) || 0; const exercise = Number(profiles.health.exercise_days) || 0; const sleepScore = Math.max(0, 100 - Math.abs(7.5 - sleep) * 18); const activityScore = Math.min(100, exercise * 18); const healthScore = profileExists.health ? Math.round((sleepScore + activityScore) / 2) : 0; const savedDomains = Object.values(profileExists).filter(Boolean).length; const completeness = `${Math.round((savedDomains / 3) * 100)}%`; return { runway, careerReadiness: `${careerScore}%`, healthIndex: `${healthScore}%`, completeness, }; }
 function formatValue(value) { if (typeof value === "number") { return Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2); } return String(value); }
 function formatProfileValue(value) {
   if (Array.isArray(value)) return value.length ? value.join(", ") : "Not set";
