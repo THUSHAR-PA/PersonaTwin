@@ -42,13 +42,23 @@ test("login and registration layouts", async ({ page }, testInfo) => {
   await page.screenshot({ path: testInfo.outputPath("register.png"), fullPage: true });
 });
 
-test("shared layouts across overview, profiles, dialogs and simulations", async ({ page, account }, testInfo) => {
+test("shared layouts across chat, profiles, dialogs and simulations", async ({ page, account }, testInfo) => {
+  const legacySummaryRequests = [];
+  page.on("request", request => {
+    if (/\/users\/[^/]+\/twin\/$/.test(new URL(request.url()).pathname)) {
+      legacySummaryRequests.push(request.url());
+    }
+  });
   await page.addInitScript(token => localStorage.setItem("pt_token", token), account.token);
   await page.goto("/", { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Overview", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Digital Twin Summary" })).toBeVisible();
+  const navigation = page.getByRole("navigation", { name: "Main navigation" });
+  await expect(navigation.getByRole("button", { name: "Chat", exact: true })).toBeVisible();
+  await expect(navigation.getByRole("button", { name: "Overview", exact: true })).toHaveCount(0);
+  for (const name of ["Digital Twin", "Profiles", "Simulations"]) {
+    await expect(navigation.getByRole("button", { name, exact: true })).toBeVisible();
+  }
   await expectLayoutFits(page);
-  await page.screenshot({ path: testInfo.outputPath("overview.png"), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath("chat.png"), fullPage: true });
   await page.getByRole("button", { name: "Profiles", exact: true }).click();
   await page.getByRole("button", { name: "Edit", exact: true }).click();
   await expect(page.getByRole("button", { name: "Save identity" })).toBeVisible();
@@ -79,13 +89,14 @@ test("shared layouts across overview, profiles, dialogs and simulations", async 
   if (testInfo.project.name === "desktop") {
     for (const width of [320, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      for (const view of ["Chat", "Overview", "Profiles", "Simulations"]) {
+      for (const view of ["Chat", "Profiles", "Simulations"]) {
         await page.getByRole("button", { name: view, exact: true }).click();
         await expectLayoutFits(page);
         await page.screenshot({ path: testInfo.outputPath(`${view.toLowerCase()}-${width}.png`), fullPage: true });
       }
     }
   }
+  expect(legacySummaryRequests).toEqual([]);
 });
 
 test("compare, explain, save feedback, reload and retain the original decision", async ({ page, account }, testInfo) => {
