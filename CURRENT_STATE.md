@@ -1,5 +1,20 @@
 # PersonaTwin — Current State
 
+## Overview cleanup — November 1, 2026
+
+The redundant Overview page and its heuristic summary cards have been removed.
+Navigation now offers Chat (the sign-in default), Digital Twin, Profiles and
+Simulations. Unused legacy twin-summary requests were removed from initial loading
+and Wallet polling. Digital Twin's own dashboard API, financial analysis and
+saved simulations remain available. The four-case simulation update is already
+in main (`b72a911`).
+
+Desktop/mobile layout coverage now follows the remaining navigation and checks
+that Overview and its unused summary requests do not return. The original branch
+CI failed because that browser journey still clicked the removed Overview button;
+the regression coverage has been updated before merging. GitHub Actions is the
+verification environment for this change. Older dated checkpoints follow.
+
 ## Financial Twin intelligence — October 20, 2026
 
 Follow-up: Wallet-history review now requests 24 completed months directly from the

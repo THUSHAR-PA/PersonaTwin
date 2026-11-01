@@ -1,11 +1,19 @@
 # PersonaTwin: Frontend Workflow
 
-Updated October 6, 2026. React is the agreed frontend.
+Updated November 1, 2026. React is the agreed frontend.
+
+## Navigation
+
+After signing in, **Chat** opens by default. The navigation contains **Chat**,
+**Digital Twin**, **Profiles** and **Simulations**. The former Overview page was
+removed because it duplicated existing information and showed heuristic summary
+scores. Open **Digital Twin > Finance** for detailed financial information and
+**Simulations** for saved scenario comparisons.
 
 ## Where the Simulation Is
 
 Open **Simulations** in the navigation. The former **Decisions** workspace is now
-the **New simulation** tab. It is also the default screen after signing in.
+the **New simulation** tab. Chat is the default screen after signing in.
 No APIs or saved database records were renamed.
 
 | Tab | Purpose |
